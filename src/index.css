@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-50 antialiased;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+      sans-serif;
+  }
+}
