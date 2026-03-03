@@ -245,6 +245,37 @@ export interface UpdateTicketStatusInput {
   data_entrega?: string | null
 }
 
+const TICKET_SELECT_WITH_RESPONSAVEL = `
+  id,
+  codigo,
+  titulo,
+  descricao,
+  tipo,
+  origem,
+  solicitante_nome,
+  solicitante_telefone,
+  categoria,
+  prioridade,
+  status,
+  responsavel_id,
+  colaborador_id,
+  data_criacao,
+  data_entrega,
+  material_impressao,
+  cor,
+  quantidade_pecas,
+  tamanho_escala,
+  observacoes_tecnicas,
+  preco_por_peca,
+  quantidade_orcamento,
+  total_orcamento,
+  desconto,
+  observacoes_orcamento,
+  status_orcamento,
+  sem_cobranca,
+  responsavel:responsavel_id ( id, name )
+`
+
 export async function updateTicketStatus(
   id: string,
   payload: UpdateTicketStatusInput,
@@ -256,7 +287,7 @@ export async function updateTicketStatus(
       data_entrega: payload.data_entrega ?? null,
     })
     .eq('id', id)
-    .select()
+    .select(TICKET_SELECT_WITH_RESPONSAVEL)
     .single()
 
   if (error) {

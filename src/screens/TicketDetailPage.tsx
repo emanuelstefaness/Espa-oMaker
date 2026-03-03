@@ -87,6 +87,7 @@ export function TicketDetailPage() {
 
   const handleStatusChange = async (next: TicketStatus) => {
     if (!id) return
+    setError(null)
     try {
       const updated = await updateTicketStatus(id, {
         status: next,
@@ -94,7 +95,9 @@ export function TicketDetailPage() {
       setTicket(updated)
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Erro ao atualizar status.'
+        err && typeof err === 'object' && 'message' in err
+          ? String((err as Error).message)
+          : 'Erro ao atualizar status.'
       setError(message)
     }
   }
@@ -224,7 +227,6 @@ export function TicketDetailPage() {
 
   const podeAlterarStatus =
     ticket.status !== 'cancelada' &&
-    ticket.status !== 'entregue' &&
     (isFelipe || isExecutor)
 
   return (
@@ -650,6 +652,7 @@ export function TicketDetailPage() {
                         <option value="pos_processo">Pós-processo</option>
                         <option value="pronta">Pronta</option>
                         <option value="entregue">Entregue (finalizado)</option>
+                        <option value="cancelada">Cancelada (excluir)</option>
                       </select>
                       <div className="flex flex-wrap gap-2 pt-1">
                         <button
