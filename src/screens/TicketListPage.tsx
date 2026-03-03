@@ -69,10 +69,11 @@ export function TicketListPage() {
         mergedFilters,
         { limit: PAGE_SIZE, offset },
       )
+      const semCanceladas = (data ?? []).filter((t) => t.status !== 'cancelada')
       if (isInitial) {
-        setTickets(data)
+        setTickets(semCanceladas)
       } else {
-        setTickets((prev) => [...prev, ...data])
+        setTickets((prev) => [...prev, ...semCanceladas])
       }
       setHasMore(more)
     } catch (err) {
