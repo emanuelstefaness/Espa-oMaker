@@ -36,10 +36,6 @@ export function TicketDetailPage() {
   const { appUser } = useAuth()
   const isFelipe = appUser?.role === 'felipe'
   const isExecutor = appUser?.role === 'executor'
-  const isResponsavel =
-    ticket &&
-    (ticket.responsavel_id === appUser?.id ||
-      ticket.colaborador_id === appUser?.id)
 
   const podeEditarDados = isFelipe || isExecutor
   const [editingDados, setEditingDados] = useState(false)
