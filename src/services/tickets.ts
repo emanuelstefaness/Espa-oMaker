@@ -81,6 +81,10 @@ export async function listTickets(
     query = query.eq('status', filters.status)
   }
 
+  if (filters.status !== 'cancelada') {
+    query = query.neq('status', 'cancelada')
+  }
+
   if (filters.responsavelId) {
     query = query.eq('responsavel_id', filters.responsavelId)
   }

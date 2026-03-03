@@ -166,7 +166,6 @@ export function TicketListPage() {
             <option value="pos_processo">Pós-processo</option>
             <option value="pronta">Pronta</option>
             <option value="entregue">Entregue</option>
-            <option value="cancelada">Cancelada</option>
           </select>
           <select
             value={tipo}
