@@ -1,5 +1,7 @@
 export type TicketTipo = 'interna' | 'externa'
 
+export type TicketOrigem = 'interno' | 'formulario'
+
 export type TicketCategoria =
   | 'impressao_3d'
   | 'modelagem_3d'
@@ -43,9 +45,11 @@ export interface TicketImpressao3D {
 
 export interface Ticket {
   id: string
+  codigo?: string | null
   titulo: string
   descricao?: string | null
   tipo: TicketTipo
+  origem: TicketOrigem
   solicitante_nome: string
   solicitante_telefone?: string | null
   categoria: TicketCategoria

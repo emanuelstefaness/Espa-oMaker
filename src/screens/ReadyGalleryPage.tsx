@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { LayoutShell } from '../components/LayoutShell'
+import { TicketStatusPill } from '../components/TicketStatusPill'
 import type { Ticket } from '../types/ticket'
 import { listTickets, listTicketFiles } from '../services/tickets'
 import type { TicketFile } from '../services/tickets'
@@ -19,8 +20,8 @@ export function ReadyGalleryPage() {
       try {
         setLoading(true)
         setError(null)
-        const tickets = await listTickets()
-        const filtered = tickets.filter(
+        const { tickets: allTickets } = await listTickets({}, { limit: 2000 })
+        const filtered = allTickets.filter(
           (t) => t.status === 'pronta' || t.status === 'entregue',
         )
 
@@ -47,79 +48,67 @@ export function ReadyGalleryPage() {
 
   return (
     <LayoutShell>
-      <section className="space-y-4">
-        <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-              Galeria
-            </p>
-            <h1 className="mt-1 text-xl font-semibold tracking-tight text-slate-50 md:text-2xl">
-              Produtos prontos e entregues
-            </h1>
-            <p className="mt-1 text-xs text-slate-400">
-              Vitrine dos trabalhos concluídos no Espaço Maker, com foco em
-              impressão 3D, modelagem e outros serviços.
-            </p>
-          </div>
+      <section className="space-y-6">
+        <header>
+          <h1 className="text-2xl font-semibold text-slate-800">
+            Prontos e entregues
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Vitrine dos trabalhos concluídos no Espaço Maker.
+          </p>
         </header>
 
         {loading && (
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-6 text-center text-xs text-slate-400">
+          <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
             Carregando galeria...
           </div>
         )}
 
         {error && (
-          <div className="rounded-2xl border border-rose-700/60 bg-rose-950/50 px-4 py-3 text-xs text-rose-50">
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
             {error}
           </div>
         )}
 
         {!loading && !error && (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {items.map((item) => (
               <Link
                 key={item.id}
                 to={`/demandas/${item.id}`}
-                className="group overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/80 shadow-[0_16px_40px_rgba(15,23,42,0.9)]"
+                className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
               >
-                <div className="relative h-40 w-full overflow-hidden bg-gradient-to-br from-slate-900 to-slate-950">
+                <div className="relative h-40 w-full overflow-hidden bg-slate-100">
                   {item.photo ? (
                     <img
                       src={item.photo.public_url}
                       alt={item.titulo}
-                      className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03] group-hover:opacity-95"
+                      className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
                     />
                   ) : (
-                    <div className="flex h-full w-full flex-col items-center justify-center gap-1 text-[11px] text-slate-500">
-                      <span className="h-8 w-8 rounded-full border border-slate-700" />
-                      <span>Sem foto anexada</span>
+                    <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-sm text-slate-400">
+                      <span className="h-12 w-12 rounded-full border-2 border-dashed border-slate-300" />
+                      <span>Sem foto</span>
                     </div>
                   )}
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/0 to-transparent" />
                 </div>
-                <div className="space-y-1.5 px-3 py-3 text-xs">
-                  <p className="line-clamp-2 text-[13px] font-semibold text-slate-50">
+                <div className="space-y-2 p-4">
+                  <p className="line-clamp-2 font-medium text-slate-800">
                     {item.titulo}
                   </p>
-                  <p className="line-clamp-1 text-[11px] text-slate-400">
-                    {item.solicitante_nome}
-                  </p>
-                  <div className="flex items-center justify-between gap-2 text-[10px] text-slate-400">
-                    <span className="rounded-full border border-slate-700 px-2 py-[2px]">
-                      {item.status === 'entregue' ? 'Entregue' : 'Pronta'}
-                    </span>
-                    <span className="truncate">
-                      Resp.: {item.responsavel_nome ?? 'Equipe'}
+                  <p className="text-sm text-slate-500">{item.solicitante_nome}</p>
+                  <div className="flex items-center justify-between gap-2">
+                    <TicketStatusPill status={item.status} />
+                    <span className="text-xs text-slate-500">
+                      {item.responsavel_nome ?? 'Equipe'}
                     </span>
                   </div>
                 </div>
               </Link>
             ))}
             {items.length === 0 && (
-              <div className="rounded-2xl border border-slate-800 bg-slate-950/80 px-4 py-6 text-xs text-slate-500">
-                Ainda não há produtos marcados como prontos ou entregues com
-                fotos para exibir.
+              <div className="col-span-full rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
+                Nenhum item pronto ou entregue com foto para exibir.
               </div>
             )}
           </div>
@@ -128,4 +117,3 @@ export function ReadyGalleryPage() {
     </LayoutShell>
   )
 }
-

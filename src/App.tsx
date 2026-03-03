@@ -9,6 +9,8 @@ import { NewTicketPage } from './screens/NewTicketPage'
 import { InboxTriagemPage } from './screens/InboxTriagemPage'
 import { ReadyGalleryPage } from './screens/ReadyGalleryPage'
 import { ReportsPage } from './screens/ReportsPage'
+import { SolicitarPage } from './screens/SolicitarPage'
+import { WhatsAppDemandsPage } from './screens/WhatsAppDemandsPage'
 
 function App() {
   return (
@@ -16,6 +18,7 @@ function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/solicitar" element={<SolicitarPage />} />
 
           <Route
             path="/"
@@ -58,6 +61,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <InboxTriagemPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/demandas-whatsapp"
+            element={
+              <ProtectedRoute>
+                <WhatsAppDemandsPage />
               </ProtectedRoute>
             }
           />

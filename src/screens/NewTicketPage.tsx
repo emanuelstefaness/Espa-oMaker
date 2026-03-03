@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import type { FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { LayoutShell } from '../components/LayoutShell'
@@ -7,7 +7,15 @@ import type {
   TicketPrioridade,
   TicketTipo,
 } from '../types/ticket'
-import { createTicket } from '../services/tickets'
+import { createTicket, uploadTicketFile } from '../services/tickets'
+
+type AnexoKind = 'foto' | 'arquivo'
+
+interface AnexoItem {
+  file: File
+  kind: AnexoKind
+  id: string
+}
 
 export function NewTicketPage() {
   const [titulo, setTitulo] = useState('')
@@ -25,25 +33,25 @@ export function NewTicketPage() {
   const [tamanhoEscala, setTamanhoEscala] = useState('')
   const [observacoesTecnicas, setObservacoesTecnicas] = useState('')
 
-  const [precoPorPeca, setPrecoPorPeca] = useState<number | ''>('')
-  const [quantidadeOrcamento, setQuantidadeOrcamento] = useState<number | ''>('')
-  const [desconto, setDesconto] = useState<number | ''>('')
-  const [observacoesOrcamento, setObservacoesOrcamento] = useState('')
-  const [statusOrcamento, setStatusOrcamento] =
-    useState<'aguardando_aprovacao' | 'aprovado' | 'reprovado'>(
-      'aguardando_aprovacao',
-    )
-  const [semCobranca, setSemCobranca] = useState(false)
+  const [anexos, setAnexos] = useState<AnexoItem[]>([])
+  const fotoInputRef = useRef<HTMLInputElement>(null)
+  const arquivoInputRef = useRef<HTMLInputElement>(null)
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const navigate = useNavigate()
 
-  const total =
-    typeof precoPorPeca === 'number' && typeof quantidadeOrcamento === 'number'
-      ? precoPorPeca * quantidadeOrcamento
-      : 0
+  const addAnexo = (file: File, kind: AnexoKind) => {
+    setAnexos((prev) => [
+      ...prev,
+      { file, kind, id: `${Date.now()}-${Math.random().toString(36).slice(2)}` },
+    ])
+  }
+
+  const removeAnexo = (id: string) => {
+    setAnexos((prev) => prev.filter((a) => a.id !== id))
+  }
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
@@ -56,7 +64,7 @@ export function NewTicketPage() {
 
     try {
       setLoading(true)
-      await createTicket({
+      const ticket = await createTicket({
         titulo,
         descricao,
         tipo,
@@ -78,18 +86,15 @@ export function NewTicketPage() {
           categoria === 'impressao_3d'
             ? observacoesTecnicas || undefined
             : undefined,
-        preco_por_peca:
-          typeof precoPorPeca === 'number' ? precoPorPeca : undefined,
-        quantidade_orcamento:
-          typeof quantidadeOrcamento === 'number'
-            ? quantidadeOrcamento
-            : undefined,
-        desconto: typeof desconto === 'number' ? desconto : undefined,
-        observacoes_orcamento: observacoesOrcamento || undefined,
-        status_orcamento:
-          tipo === 'externa' ? statusOrcamento : undefined,
-        sem_cobranca: tipo === 'interna' ? semCobranca : false,
       })
+
+      for (const a of anexos) {
+        try {
+          await uploadTicketFile(ticket.id, a.file, a.kind)
+        } catch {
+          // continua com os demais anexos
+        }
+      }
 
       navigate('/demandas')
     } catch (err) {
@@ -101,49 +106,43 @@ export function NewTicketPage() {
     }
   }
 
+  const inputClass =
+    'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400'
+  const labelClass = 'mb-1 block text-sm font-medium text-slate-700'
+
   return (
     <LayoutShell>
-      <section className="space-y-4">
-        <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-              Nova demanda
-            </p>
-            <h1 className="mt-1 text-xl font-semibold tracking-tight text-slate-50 md:text-2xl">
-              Cadastrar demanda no Espaço Maker
-            </h1>
-            <p className="mt-1 text-xs text-slate-400">
-              Preencha os campos principais. A triagem e distribuição ficam com
-              o Felipe.
-            </p>
-          </div>
+      <section className="space-y-6">
+        <header>
+          <h1 className="text-2xl font-semibold text-slate-800">
+            Nova demanda
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Preencha os dados. A triagem e o responsável são definidos depois.
+          </p>
         </header>
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-4 rounded-2xl border border-slate-800 bg-slate-950/80 p-3 text-xs md:p-4"
+          className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
         >
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-slate-200">
-                Título / Nome da demanda
-              </label>
+              <label className={labelClass}>Título</label>
               <input
                 required
                 value={titulo}
                 onChange={(e) => setTitulo(e.target.value)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-50 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                className={inputClass}
                 placeholder="Ex: Impressão 3D - suporte para sensor"
               />
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-slate-200">
-                Tipo
-              </label>
+              <label className={labelClass}>Tipo</label>
               <select
                 value={tipo}
                 onChange={(e) => setTipo(e.target.value as TicketTipo)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-50 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                className={inputClass}
               >
                 <option value="interna">Interna</option>
                 <option value="externa">Externa</option>
@@ -151,56 +150,50 @@ export function NewTicketPage() {
             </div>
           </div>
 
-          <div className="grid gap-3 md:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-slate-200">
-                Solicitante - nome
-              </label>
+              <label className={labelClass}>Solicitante</label>
               <input
                 required
                 value={solicitanteNome}
                 onChange={(e) => setSolicitanteNome(e.target.value)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-50 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                className={inputClass}
                 placeholder="Pessoa / equipe / empresa"
               />
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-slate-200">
-                Telefone (obrigatório para externas)
+              <label className={labelClass}>
+                Telefone {tipo === 'externa' && '(obrigatório)'}
               </label>
               <input
                 value={solicitanteTelefone}
                 onChange={(e) => setSolicitanteTelefone(e.target.value)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-50 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                className={inputClass}
                 placeholder="(xx) xxxxx-xxxx"
               />
             </div>
           </div>
 
           <div>
-            <label className="mb-1 block text-[11px] font-medium text-slate-200">
-              Descrição
-            </label>
+            <label className={labelClass}>Descrição</label>
             <textarea
               value={descricao}
               onChange={(e) => setDescricao(e.target.value)}
               rows={3}
-              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-50 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-              placeholder="Detalhe o que deve ser feito, anexos podem ser adicionados depois."
+              className={inputClass}
+              placeholder="Detalhe o que deve ser feito."
             />
           </div>
 
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-3">
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-slate-200">
-                Categoria
-              </label>
+              <label className={labelClass}>Categoria</label>
               <select
                 value={categoria}
                 onChange={(e) =>
                   setCategoria(e.target.value as TicketCategoria)
                 }
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-50 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                className={inputClass}
               >
                 <option value="impressao_3d">Impressão 3D</option>
                 <option value="modelagem_3d">Modelagem 3D</option>
@@ -210,15 +203,13 @@ export function NewTicketPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-slate-200">
-                Prioridade
-              </label>
+              <label className={labelClass}>Prioridade</label>
               <select
                 value={prioridade}
                 onChange={(e) =>
                   setPrioridade(e.target.value as TicketPrioridade)
                 }
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-50 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                className={inputClass}
               >
                 <option value="baixa">Baixa</option>
                 <option value="media">Média</option>
@@ -227,32 +218,28 @@ export function NewTicketPage() {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-[11px] font-medium text-slate-200">
-                Prazo de entrega (dia)
-              </label>
+              <label className={labelClass}>Prazo de entrega</label>
               <input
                 type="date"
                 value={dataEntrega}
                 onChange={(e) => setDataEntrega(e.target.value)}
-                className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-50 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                className={inputClass}
               />
             </div>
           </div>
 
           {categoria === 'impressao_3d' && (
-            <div className="space-y-3 rounded-xl border border-cyan-700/60 bg-cyan-950/30 p-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-cyan-200">
+            <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+              <h3 className="text-sm font-semibold text-slate-700">
                 Impressão 3D
-              </p>
-              <div className="grid gap-3 md:grid-cols-3">
+              </h3>
+              <div className="grid gap-4 sm:grid-cols-3">
                 <div>
-                  <label className="mb-1 block text-[11px] font-medium text-slate-200">
-                    Material
-                  </label>
+                  <label className={labelClass}>Material</label>
                   <select
                     value={material}
                     onChange={(e) => setMaterial(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-50 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    className={inputClass}
                   >
                     <option value="PLA">PLA</option>
                     <option value="PETG">PETG</option>
@@ -262,20 +249,16 @@ export function NewTicketPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-[11px] font-medium text-slate-200">
-                    Cor
-                  </label>
+                  <label className={labelClass}>Cor</label>
                   <input
                     value={cor}
                     onChange={(e) => setCor(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-50 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                    placeholder="Ex: preto, branco, azul..."
+                    className={inputClass}
+                    placeholder="Ex: preto, branco"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-[11px] font-medium text-slate-200">
-                    Quantidade de peças
-                  </label>
+                  <label className={labelClass}>Quantidade de peças</label>
                   <input
                     type="number"
                     min={1}
@@ -285,175 +268,123 @@ export function NewTicketPage() {
                         e.target.value ? Number(e.target.value) : '',
                       )
                     }
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-50 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                    className={inputClass}
                   />
                 </div>
               </div>
-              <div className="grid gap-3 md:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="mb-1 block text-[11px] font-medium text-slate-200">
-                    Tamanho / escala
-                  </label>
+                  <label className={labelClass}>Tamanho / escala</label>
                   <input
                     value={tamanhoEscala}
                     onChange={(e) => setTamanhoEscala(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-50 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                    placeholder="Ex: escala 1:1, ~10 cm"
+                    className={inputClass}
+                    placeholder="Ex: 1:1, ~10 cm"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-[11px] font-medium text-slate-200">
-                    Observações técnicas
-                  </label>
+                  <label className={labelClass}>Observações técnicas</label>
                   <input
                     value={observacoesTecnicas}
                     onChange={(e) => setObservacoesTecnicas(e.target.value)}
-                    className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-50 placeholder:text-slate-500 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500"
-                    placeholder="Direção de camada, resistência, etc."
+                    className={inputClass}
+                    placeholder="Direção de camada, etc."
                   />
                 </div>
               </div>
             </div>
           )}
 
-          <div className="space-y-3 rounded-xl border border-emerald-700/60 bg-emerald-950/20 p-3">
-            <div className="flex items-center justify-between gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-emerald-200">
-                Orçamento
-              </p>
-              {tipo === 'interna' && (
-                <label className="flex items-center gap-2 text-[11px] text-emerald-100">
-                  <input
-                    type="checkbox"
-                    checked={semCobranca}
-                    onChange={(e) => setSemCobranca(e.target.checked)}
-                    className="h-3 w-3 rounded border border-emerald-500 bg-transparent text-emerald-500"
-                  />
-                  Sem cobrança
-                </label>
-              )}
+          <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+            <h3 className="text-sm font-semibold text-slate-700">
+              Fotos e arquivos
+            </h3>
+            <p className="text-xs text-slate-500">
+              Adicione fotos (referência) ou arquivos (STL, OBJ, PDF, etc.). Serão enviados junto com a demanda.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <input
+                ref={fotoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) addAnexo(f, 'foto')
+                  e.target.value = ''
+                }}
+              />
+              <input
+                ref={arquivoInputRef}
+                type="file"
+                accept=".stl,.obj,.3mf,.pdf,image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) addAnexo(f, 'arquivo')
+                  e.target.value = ''
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => fotoInputRef.current?.click()}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                + Foto
+              </button>
+              <button
+                type="button"
+                onClick={() => arquivoInputRef.current?.click()}
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                + Arquivo (STL, PDF…)
+              </button>
             </div>
-            <div className="grid gap-3 md:grid-cols-3">
-              <div>
-                <label className="mb-1 block text-[11px] font-medium text-slate-200">
-                  Preço por peça (R$)
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  value={precoPorPeca}
-                  onChange={(e) =>
-                    setPrecoPorPeca(
-                      e.target.value ? Number(e.target.value) : '',
-                    )
-                  }
-                  className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-50 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-[11px] font-medium text-slate-200">
-                  Quantidade
-                </label>
-                <input
-                  type="number"
-                  min={1}
-                  value={quantidadeOrcamento}
-                  onChange={(e) =>
-                    setQuantidadeOrcamento(
-                      e.target.value ? Number(e.target.value) : '',
-                    )
-                  }
-                  className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-50 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-[11px] font-medium text-slate-200">
-                  Total automático (R$)
-                </label>
-                <input
-                  disabled
-                  value={total.toFixed(2)}
-                  className="w-full rounded-lg border border-emerald-600 bg-emerald-900/40 px-3 py-2 text-xs text-emerald-50"
-                />
-              </div>
-            </div>
-
-            <div className="grid gap-3 md:grid-cols-3">
-              <div>
-                <label className="mb-1 block text-[11px] font-medium text-slate-200">
-                  Desconto (R$ opcional)
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  value={desconto}
-                  onChange={(e) =>
-                    setDesconto(e.target.value ? Number(e.target.value) : '')
-                  }
-                  className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-50 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                />
-              </div>
-              <div className="md:col-span-2">
-                <label className="mb-1 block text-[11px] font-medium text-slate-200">
-                  Observações do orçamento
-                </label>
-                <input
-                  value={observacoesOrcamento}
-                  onChange={(e) => setObservacoesOrcamento(e.target.value)}
-                  className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-50 placeholder:text-slate-500 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                  placeholder="Condições, prazo de validade, etc."
-                />
-              </div>
-            </div>
-
-            {tipo === 'externa' && (
-              <div>
-                <label className="mb-1 block text-[11px] font-medium text-slate-200">
-                  Status do orçamento
-                </label>
-                <select
-                  value={statusOrcamento}
-                  onChange={(e) =>
-                    setStatusOrcamento(
-                      e.target.value as
-                        | 'aguardando_aprovacao'
-                        | 'aprovado'
-                        | 'reprovado',
-                    )
-                  }
-                  className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-xs text-slate-50 focus:border-emerald-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
-                >
-                  <option value="aguardando_aprovacao">
-                    Aguardando aprovação
-                  </option>
-                  <option value="aprovado">Aprovado</option>
-                  <option value="reprovado">Reprovado</option>
-                </select>
-              </div>
+            {anexos.length > 0 && (
+              <ul className="mt-3 space-y-2">
+                {anexos.map((a) => (
+                  <li
+                    key={a.id}
+                    className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700"
+                  >
+                    <span>
+                      {a.file.name}
+                      <span className="ml-2 text-xs text-slate-400">
+                        {a.kind === 'foto' ? 'Foto' : 'Arquivo'}
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => removeAnexo(a.id)}
+                      className="text-rose-600 hover:text-rose-700"
+                    >
+                      Remover
+                    </button>
+                  </li>
+                ))}
+              </ul>
             )}
           </div>
 
           {error && (
-            <div className="rounded-lg border border-rose-600/70 bg-rose-950/50 px-3 py-2 text-[11px] text-rose-50">
+            <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
               {error}
             </div>
           )}
 
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-3 border-t border-slate-100 pt-4">
             <button
               type="button"
               disabled={loading}
               onClick={() => navigate(-1)}
-              className="rounded-lg border border-slate-700 px-4 py-2 text-xs font-medium text-slate-200 hover:border-slate-500 disabled:opacity-60"
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="rounded-lg bg-emerald-500 px-4 py-2 text-xs font-semibold text-emerald-950 shadow-sm shadow-emerald-500/40 hover:bg-emerald-400 disabled:opacity-60"
+              className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 disabled:opacity-50"
             >
               {loading ? 'Salvando...' : 'Salvar demanda'}
             </button>
@@ -463,4 +394,3 @@ export function NewTicketPage() {
     </LayoutShell>
   )
 }
-

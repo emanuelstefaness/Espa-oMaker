@@ -3,24 +3,13 @@ import { LayoutShell } from '../components/LayoutShell'
 import { TicketStatusPill } from '../components/TicketStatusPill'
 import type { Ticket } from '../types/ticket'
 import { listTickets, updateTicketResponsavel } from '../services/tickets'
+import { listAppUsers } from '../services/appUsers'
+import type { AppUserOption } from '../services/appUsers'
 import { useAuth } from '../auth/AuthContext'
-
-interface AppUserOption {
-  id: string
-  name: string
-}
-
-// Em um cenário real, você pode carregar esta lista da tabela app_users.
-const EXECUTORES_FIXOS: AppUserOption[] = [
-  { id: 'manu', name: 'Manu' },
-  { id: 'gabriel', name: 'Gabriel' },
-  { id: 'felipe', name: 'Felipe' },
-  { id: 'jhonny', name: 'Jhonny' },
-  { id: 'moreno', name: 'Moreno' },
-]
 
 export function InboxTriagemPage() {
   const [tickets, setTickets] = useState<Ticket[]>([])
+  const [executores, setExecutores] = useState<AppUserOption[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [savingId, setSavingId] = useState<string | null>(null)
@@ -34,12 +23,18 @@ export function InboxTriagemPage() {
       try {
         setLoading(true)
         setError(null)
-        const data = await listTickets({ status: 'recebida' })
-        setTickets(data)
+        const [ticketsResult, usersData] = await Promise.all([
+          listTickets({ status: 'recebida' }, { limit: 500 }),
+          listAppUsers(),
+        ])
+        setTickets(ticketsResult.tickets)
+        setExecutores(usersData)
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Erro ao carregar recebidas.'
-        setError(message)
+        const raw =
+          err && typeof err === 'object' && 'message' in err
+            ? String((err as Error).message)
+            : 'Erro ao carregar recebidas.'
+        setError(raw)
       } finally {
         setLoading(false)
       }
@@ -52,12 +47,16 @@ export function InboxTriagemPage() {
     if (!responsavel) return
     try {
       setSavingId(ticketId)
-      const updated = await updateTicketResponsavel(ticketId, {
+      await updateTicketResponsavel(ticketId, {
         responsavel_id: responsavel,
+        status: 'em_analise',
       })
-      setTickets((prev) =>
-        prev.map((t) => (t.id === ticketId ? updated : t)),
-      )
+      setTickets((prev) => prev.filter((t) => t.id !== ticketId))
+      setSelectedResponsavel((prev) => {
+        const next = { ...prev }
+        delete next[ticketId]
+        return next
+      })
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Erro ao atribuir responsável.'
@@ -71,64 +70,55 @@ export function InboxTriagemPage() {
 
   return (
     <LayoutShell>
-      <section className="space-y-4">
-        <header className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-400">
-              Caixa de entrada
-            </p>
-            <h1 className="mt-1 text-xl font-semibold tracking-tight text-slate-50 md:text-2xl">
-              Triagem de demandas recebidas
-            </h1>
-            <p className="mt-1 text-xs text-slate-400">
-              Felipe define categoria, prioridade, tipo (interna/externa),
-              prazo e atribui o responsável principal.
-            </p>
-          </div>
+      <section className="space-y-6">
+        <header>
+          <h1 className="text-2xl font-semibold text-slate-800">
+            Caixa de entrada
+          </h1>
+          <p className="mt-1 text-sm text-slate-500">
+            Triagem de demandas recebidas. Atribua o responsável para seguir o fluxo.
+          </p>
         </header>
 
         {!isFelipe && (
-          <div className="rounded-2xl border border-amber-700/60 bg-amber-950/40 px-4 py-3 text-xs text-amber-50">
-            Apenas Felipe (usuário de triagem) deve operar nesta tela. Os
-            demais acompanham suas demandas em &quot;Minhas demandas&quot;.
-          </div>
-        )}
-
-        {loading && (
-          <div className="rounded-2xl border border-slate-800 bg-slate-950/70 px-4 py-6 text-center text-xs text-slate-400">
-            Carregando recebidas...
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Apenas o usuário de triagem (Felipe) pode atribuir responsável. Você pode visualizar as demandas recebidas.
           </div>
         )}
 
         {error && (
-          <div className="rounded-2xl border border-rose-700/60 bg-rose-950/50 px-4 py-3 text-xs text-rose-50">
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
             {error}
           </div>
         )}
 
-        {!loading && !error && (
-          <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/80">
-            <div className="flex items-center justify-between border-b border-slate-800 px-3 py-2 text-[11px] text-slate-400">
-              <span>{tickets.length} demandas recebidas</span>
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-100 px-4 py-3">
+            <span className="text-sm font-medium text-slate-600">
+              {tickets.length} demandas recebidas
+            </span>
+          </div>
+          {loading ? (
+            <div className="px-4 py-8 text-center text-sm text-slate-500">
+              Carregando...
             </div>
-            <ul className="divide-y divide-slate-800 text-sm">
+          ) : (
+            <ul className="divide-y divide-slate-100">
               {tickets.map((ticket) => (
                 <li
                   key={ticket.id}
-                  className="flex flex-col gap-3 px-3 py-3 md:flex-row md:items-center md:justify-between"
+                  className="flex flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate text-[13px] font-medium text-slate-50">
-                        {ticket.titulo}
-                      </p>
-                      <TicketStatusPill status={ticket.status} />
-                    </div>
-                    <p className="mt-1 line-clamp-1 text-[11px] text-slate-400">
+                    <p className="font-medium text-slate-800">{ticket.titulo}</p>
+                    <p className="text-sm text-slate-500">
                       {ticket.solicitante_nome}
                     </p>
+                    <div className="mt-2">
+                      <TicketStatusPill status={ticket.status} />
+                    </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 text-[11px] md:justify-end">
+                  <div className="flex flex-wrap items-center gap-2">
                     <select
                       disabled={!isFelipe}
                       value={selectedResponsavel[ticket.id] ?? ''}
@@ -138,10 +128,10 @@ export function InboxTriagemPage() {
                           [ticket.id]: e.target.value,
                         }))
                       }
-                      className="rounded-lg border border-slate-700 bg-slate-900 px-2 py-1.5 text-[11px] text-slate-50 focus:border-cyan-400 focus:outline-none focus:ring-1 focus:ring-cyan-500"
+                      className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-60"
                     >
                       <option value="">Definir responsável</option>
-                      {EXECUTORES_FIXOS.map((u) => (
+                      {executores.map((u) => (
                         <option key={u.id} value={u.id}>
                           {u.name}
                         </option>
@@ -151,23 +141,22 @@ export function InboxTriagemPage() {
                       type="button"
                       disabled={!isFelipe || savingId === ticket.id}
                       onClick={() => handleAtribuir(ticket.id)}
-                      className="rounded-lg bg-cyan-500 px-3 py-1.5 text-[11px] font-semibold text-slate-950 hover:bg-cyan-400 disabled:opacity-60"
+                      className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
                     >
                       {savingId === ticket.id ? 'Salvando...' : 'Atribuir'}
                     </button>
                   </div>
                 </li>
               ))}
-              {tickets.length === 0 && (
-                <li className="px-3 py-4 text-[11px] text-slate-500">
-                  Nenhuma demanda nova na caixa de entrada.
-                </li>
-              )}
             </ul>
-          </div>
-        )}
+          )}
+          {!loading && tickets.length === 0 && (
+            <div className="px-4 py-8 text-center text-sm text-slate-500">
+              Nenhuma demanda nova na caixa de entrada.
+            </div>
+          )}
+        </div>
       </section>
     </LayoutShell>
   )
 }
-

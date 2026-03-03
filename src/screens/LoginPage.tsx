@@ -24,26 +24,23 @@ export function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-slate-950 via-slate-950 to-slate-950/90 px-4">
-      <div className="w-full max-w-md rounded-2xl border border-blue-700/60 bg-slate-950/80 p-6 shadow-[0_18px_40px_rgba(15,23,42,0.9)] backdrop-blur">
+    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-lg">
         <div className="mb-6 space-y-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-300">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
             Cilla Tech Park · Espaço Maker
           </p>
-          <h1 className="text-xl font-semibold text-slate-50">
+          <h1 className="text-xl font-semibold text-slate-800">
             Gerenciamento de demandas
           </h1>
-          <p className="text-xs text-slate-400">
+          <p className="text-sm text-slate-500">
             Acompanhe triagem, orçamento, produção e entrega em um único lugar.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label
-              htmlFor="email"
-              className="text-xs font-medium text-slate-200"
-            >
+          <div>
+            <label htmlFor="email" className="mb-1 block text-sm font-medium text-slate-700">
               E-mail institucional
             </label>
             <input
@@ -53,16 +50,13 @@ export function LoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50 shadow-sm outline-none ring-0 placeholder:text-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
               placeholder="ex: felipe@espacomaker.local"
             />
           </div>
 
-          <div className="space-y-1.5">
-            <label
-              htmlFor="password"
-              className="text-xs font-medium text-slate-200"
-            >
+          <div>
+            <label htmlFor="password" className="mb-1 block text-sm font-medium text-slate-700">
               Senha
             </label>
             <input
@@ -72,13 +66,13 @@ export function LoginPage() {
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-slate-50 shadow-sm outline-none ring-0 placeholder:text-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-              placeholder="Senha configurada no Supabase"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              placeholder="Senha"
             />
           </div>
 
           {error && (
-            <div className="rounded-lg border border-rose-500/40 bg-rose-950/40 px-3 py-2 text-[11px] text-rose-100">
+            <div className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">
               {error}
             </div>
           )}
@@ -86,20 +80,16 @@ export function LoginPage() {
           <button
             type="submit"
             disabled={loading}
-            className="mt-2 inline-flex w-full items-center justify-center rounded-lg bg-lime-400 px-3 py-2 text-sm font-semibold text-slate-950 shadow-[0_12px_40px_rgba(22,163,74,0.7)] transition hover:bg-lime-300 disabled:cursor-not-allowed disabled:opacity-60"
+            className="w-full rounded-lg bg-emerald-500 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 disabled:opacity-60"
           >
             {loading ? 'Entrando...' : 'Entrar'}
           </button>
 
-          <p className="mt-3 text-[11px] leading-relaxed text-slate-500">
-            Acesso restrito à equipe do Espaço Maker (Cilla Tech Park). Os usuários iniciais
-            (Manu, Gabriel, Felipe, Jhonny e Moreno) devem ser criados no
-            Supabase com e-mail e senha. Felipe é configurado com papel de
-            triagem.
+          <p className="text-xs text-slate-500">
+            Acesso à equipe do Espaço Maker. Usuários são criados no Supabase.
           </p>
         </form>
       </div>
     </div>
   )
 }
-

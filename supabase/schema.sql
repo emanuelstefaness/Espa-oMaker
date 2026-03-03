@@ -21,6 +21,8 @@ create table if not exists public.tickets (
 
   tipo text not null check (tipo in ('interna', 'externa')),
 
+  origem text not null check (origem in ('interno', 'formulario')) default 'interno',
+
   solicitante_nome text not null,
   solicitante_telefone text,
 
@@ -115,7 +117,7 @@ create table if not exists public.ticket_files (
   id bigserial primary key,
   ticket_id uuid not null references public.tickets (id) on delete cascade,
   created_at timestamptz not null default now(),
-  uploaded_by uuid not null references public.app_users (id),
+  uploaded_by uuid references public.app_users (id),
   kind text not null check (kind in ('foto', 'arquivo')),
   storage_path text not null,
   file_name text not null,
@@ -126,8 +128,10 @@ create table if not exists public.ticket_files (
 create index if not exists ticket_files_ticket_idx on public.ticket_files (ticket_id);
 
 -- Storage: bucket para anexos ------------------------------------------------
--- Crie um bucket chamado 'ticket-files' no painel de Storage do Supabase.
--- Depois aplique estas políticas para permitir leitura pública e escrita autenticada.
+-- Crie o bucket no painel Storage do Supabase se ainda não existir.
+-- Para arquivos grandes (ex.: STL): em Storage → Settings, aumente o
+-- "Global file size limit" (Free: até 50 MB). No bucket "ticket-files",
+-- Editar → Restrict file size → ex. 52428800 (50 MB).
 
 insert into storage.buckets (id, name, public)
 values ('ticket-files', 'ticket-files', true)
@@ -146,6 +150,28 @@ with check (
   and auth.role() = 'authenticated'
 );
 
+-- Upload anônimo só para tickets do formulário (path = ticket_id/...)
+create or replace function public.ticket_permite_upload_anon(p_ticket_id uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (select 1 from public.tickets where id = p_ticket_id and origem = 'formulario');
+$$;
+
+create policy "Permitir upload anon para tickets formulario"
+on storage.objects
+for insert
+with check (
+  bucket_id = 'ticket-files'
+  and (
+    auth.role() = 'authenticated'
+    or public.ticket_permite_upload_anon(split_part(name, '/', 1)::uuid)
+  )
+);
+
 -- RLS / Permissões --------------------------------------------------------
 
 alter table public.app_users enable row level security;
@@ -154,11 +180,13 @@ alter table public.ticket_logs enable row level security;
 alter table public.ticket_comments enable row level security;
 alter table public.ticket_files enable row level security;
 
--- Helper: role atual
+-- Helper: role atual (SECURITY DEFINER evita recursão quando usada em RLS em app_users)
 create or replace function public.current_app_role()
 returns text
 language sql
 stable
+security definer
+set search_path = public
 as $$
   select role
   from public.app_users
@@ -182,17 +210,28 @@ using (
   or public.current_app_role() = 'admin'
 );
 
+-- triagem (Felipe) pode listar todos para atribuir responsável
+create policy "app_users_select_felipe_triagem"
+on public.app_users
+for select
+using (public.current_app_role() = 'felipe');
+
 -- tickets: todos podem ver, mas regras de escrita específicas
 create policy "tickets_select_all"
 on public.tickets
 for select
 using (true);
 
--- criação: qualquer usuário autenticado pode criar
+-- criação: usuário autenticado ou formulário público (origem = formulario)
 create policy "tickets_insert_any_authenticated"
 on public.tickets
 for insert
 with check (auth.uid() is not null);
+
+create policy "tickets_insert_formulario_anon"
+on public.tickets
+for insert
+with check (origem = 'formulario');
 
 -- atualização por Felipe (triagem) - pode mudar responsável, triagem, status inicial
 create policy "tickets_update_by_felipe_triagem"
@@ -201,20 +240,35 @@ for update
 using (public.current_app_role() = 'felipe')
 with check (public.current_app_role() = 'felipe');
 
--- atualização por executores - apenas em etapas de produção/pós/pronta/entregue
-create policy "tickets_update_by_executor_after_assigned"
+-- atualização por executor: pode alterar tudo exceto responsável (status, dados, etc.)
+create policy "tickets_update_by_executor"
 on public.tickets
 for update
-using (
-  public.current_app_role() = 'executor'
-  and auth.uid() = responsavel_id
-  and status in ('em_producao', 'pos_processo', 'pronta', 'entregue')
-)
-with check (
-  public.current_app_role() = 'executor'
-  and auth.uid() = responsavel_id
-  and status in ('em_producao', 'pos_processo', 'pronta', 'entregue')
-);
+using (public.current_app_role() = 'executor')
+with check (public.current_app_role() = 'executor');
+
+-- Só Felipe pode alterar responsavel_id e colaborador_id (trigger abaixo)
+create or replace function public.tickets_block_executor_assign()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if public.current_app_role() = 'executor' then
+    if old.responsavel_id is distinct from new.responsavel_id
+       or old.colaborador_id is distinct from new.colaborador_id then
+      raise exception 'Apenas triagem (Felipe) pode atribuir responsável ou colaborador.';
+    end if;
+  end if;
+  return new;
+end;
+$$;
+
+create trigger tickets_block_executor_assign_trigger
+  before update on public.tickets
+  for each row
+  execute function public.tickets_block_executor_assign();
 
 -- logs, comentários e arquivos: qualquer usuário autenticado envolvido pode inserir
 create policy "ticket_logs_select_all"
@@ -246,6 +300,17 @@ create policy "ticket_files_insert_authenticated"
 on public.ticket_files
 for insert
 with check (auth.uid() is not null);
+
+create policy "ticket_files_insert_formulario_anon"
+on public.ticket_files
+for insert
+with check (
+  uploaded_by is null
+  and exists (
+    select 1 from public.tickets t
+    where t.id = ticket_id and t.origem = 'formulario'
+  )
+);
 
 -- SEED INICIAL DE USUÁRIOS -----------------------------------------------
 -- Execute antes disso a criação dos usuários no painel Auth do Supabase

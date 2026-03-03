@@ -5,6 +5,7 @@ import type {
   TicketPrioridade,
   TicketStatus,
   TicketTipo,
+  TicketOrigem,
 } from '../types/ticket'
 
 export interface TicketFilters {
@@ -14,11 +15,35 @@ export interface TicketFilters {
   prioridade?: TicketPrioridade
   categoria?: TicketCategoria
   tipo?: TicketTipo
+  origem?: TicketOrigem
   dataInicial?: string
   dataFinal?: string
 }
 
-export async function listTickets(filters: TicketFilters = {}): Promise<Ticket[]> {
+export interface ListTicketsOptions {
+  limit?: number
+  offset?: number
+}
+
+export interface ListTicketsResult {
+  tickets: Ticket[]
+  hasMore: boolean
+}
+
+const DEFAULT_PAGE_SIZE = 100
+const MAX_PAGE_SIZE = 5000
+
+export async function listTickets(
+  filters: TicketFilters = {},
+  options: ListTicketsOptions = {},
+): Promise<ListTicketsResult> {
+  const limit = Math.min(
+    options.limit ?? DEFAULT_PAGE_SIZE,
+    MAX_PAGE_SIZE,
+  )
+  const offset = options.offset ?? 0
+  const fetchSize = limit + 1
+
   let query = supabase.from('tickets').select(
     `
       id,
@@ -26,6 +51,7 @@ export async function listTickets(filters: TicketFilters = {}): Promise<Ticket[]
       titulo,
       descricao,
       tipo,
+      origem,
       solicitante_nome,
       solicitante_telefone,
       categoria,
@@ -71,6 +97,10 @@ export async function listTickets(filters: TicketFilters = {}): Promise<Ticket[]
     query = query.eq('tipo', filters.tipo)
   }
 
+  if (filters.origem) {
+    query = query.eq('origem', filters.origem)
+  }
+
   if (filters.dataInicial) {
     query = query.gte('data_entrega', filters.dataInicial)
   }
@@ -85,13 +115,20 @@ export async function listTickets(filters: TicketFilters = {}): Promise<Ticket[]
     )
   }
 
-  const { data, error } = await query.order('data_criacao', { ascending: false })
+  const { data, error } = await query
+    .order('data_criacao', { ascending: false })
+    .range(offset, offset + fetchSize - 1)
 
   if (error) {
     throw error
   }
 
-  return (data ?? []).map(mapRowToTicket)
+  const rows = data ?? []
+  const hasMore = rows.length > limit
+  const page = rows.slice(0, limit)
+  const tickets = page.map(mapRowToTicket)
+
+  return { tickets, hasMore }
 }
 
 export async function getTicket(id: string): Promise<Ticket | null> {
@@ -104,6 +141,7 @@ export async function getTicket(id: string): Promise<Ticket | null> {
         titulo,
         descricao,
         tipo,
+        origem,
         solicitante_nome,
         solicitante_telefone,
         categoria,
@@ -143,6 +181,8 @@ export interface CreateTicketInput {
   titulo: string
   descricao?: string
   tipo: TicketTipo
+  /** Default 'interno'. Use 'formulario' para demandas do link público/WhatsApp. */
+  origem?: TicketOrigem
   solicitante_nome: string
   solicitante_telefone?: string
   categoria: TicketCategoria
@@ -168,6 +208,7 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
       titulo: input.titulo,
       descricao: input.descricao,
       tipo: input.tipo,
+      origem: input.origem ?? 'interno',
       solicitante_nome: input.solicitante_nome,
       solicitante_telefone: input.solicitante_telefone,
       categoria: input.categoria,
@@ -225,23 +266,92 @@ export async function updateTicketStatus(
   return mapRowToTicket(data)
 }
 
+/** Atualização de dados gerais da demanda (Felipe e responsável/colaborador podem editar tudo). */
+export interface UpdateTicketDadosInput {
+  titulo?: string
+  descricao?: string | null
+  solicitante_nome?: string
+  solicitante_telefone?: string | null
+  categoria?: TicketCategoria
+  prioridade?: TicketPrioridade
+  data_entrega?: string | null
+  material_impressao?: string | null
+  cor?: string | null
+  quantidade_pecas?: number | null
+  tamanho_escala?: string | null
+  observacoes_tecnicas?: string | null
+}
+
+export async function updateTicketDados(
+  id: string,
+  payload: UpdateTicketDadosInput,
+): Promise<Ticket> {
+  const updatePayload: Record<string, unknown> = {}
+  if (payload.titulo !== undefined) updatePayload.titulo = payload.titulo
+  if (payload.descricao !== undefined) updatePayload.descricao = payload.descricao
+  if (payload.solicitante_nome !== undefined)
+    updatePayload.solicitante_nome = payload.solicitante_nome
+  if (payload.solicitante_telefone !== undefined)
+    updatePayload.solicitante_telefone = payload.solicitante_telefone
+  if (payload.categoria !== undefined) updatePayload.categoria = payload.categoria
+  if (payload.prioridade !== undefined) updatePayload.prioridade = payload.prioridade
+  if (payload.data_entrega !== undefined)
+    updatePayload.data_entrega = payload.data_entrega
+  if (payload.material_impressao !== undefined)
+    updatePayload.material_impressao = payload.material_impressao
+  if (payload.cor !== undefined) updatePayload.cor = payload.cor
+  if (payload.quantidade_pecas !== undefined)
+    updatePayload.quantidade_pecas = payload.quantidade_pecas
+  if (payload.tamanho_escala !== undefined)
+    updatePayload.tamanho_escala = payload.tamanho_escala
+  if (payload.observacoes_tecnicas !== undefined)
+    updatePayload.observacoes_tecnicas = payload.observacoes_tecnicas
+
+  const { data, error } = await supabase
+    .from('tickets')
+    .update(updatePayload)
+    .eq('id', id)
+    .select(
+      `
+      *,
+      responsavel:responsavel_id ( id, name )
+    `,
+    )
+    .single()
+
+  if (error) throw error
+  return mapRowToTicket(data)
+}
+
 export interface UpdateTicketResponsavelInput {
   responsavel_id: string | null
   colaborador_id?: string | null
+  /** Ao atribuir na triagem, avança para em_analise para a demanda sair da caixa de entrada */
+  status?: TicketStatus
+  data_entrega?: string | null
 }
 
 export async function updateTicketResponsavel(
   id: string,
   payload: UpdateTicketResponsavelInput,
 ): Promise<Ticket> {
+  const updatePayload: Record<string, unknown> = {
+    responsavel_id: payload.responsavel_id,
+    colaborador_id: payload.colaborador_id ?? null,
+  }
+  if (payload.status !== undefined) updatePayload.status = payload.status
+  if (payload.data_entrega !== undefined) updatePayload.data_entrega = payload.data_entrega
+
   const { data, error } = await supabase
     .from('tickets')
-    .update({
-      responsavel_id: payload.responsavel_id,
-      colaborador_id: payload.colaborador_id ?? null,
-    })
+    .update(updatePayload)
     .eq('id', id)
-    .select()
+    .select(
+      `
+      *,
+      responsavel:responsavel_id ( id, name )
+    `,
+    )
     .single()
 
   if (error) {
@@ -346,11 +456,26 @@ export interface TicketFile {
 
 const BUCKET = 'ticket-files'
 
+/** Limite máximo por arquivo (50 MB no plano Free do Supabase). */
+export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024
+
 export async function uploadTicketFile(
   ticketId: string,
   file: File,
   kind: 'foto' | 'arquivo',
 ): Promise<void> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error('Faça login para enviar anexos.')
+
+  if (file.size > MAX_UPLOAD_BYTES) {
+    const mb = Math.round(MAX_UPLOAD_BYTES / (1024 * 1024))
+    throw new Error(
+      `Arquivo muito grande (máx. ${mb} MB). Comprima o arquivo ou use um menor.`,
+    )
+  }
+
   const ext = file.name.split('.').pop() ?? 'bin'
   const path = `${ticketId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
@@ -361,12 +486,75 @@ export async function uploadTicketFile(
       upsert: false,
     })
 
-  if (uploadError) throw uploadError
+  if (uploadError) {
+    const msg = uploadError.message ?? ''
+    if (
+      /maximum allowed size|exceeded.*size|object.*size/i.test(msg) ||
+      uploadError.message?.includes('Payload too large')
+    ) {
+      throw new Error(
+        'Arquivo maior que o limite do Storage. No Supabase: Storage → Settings, aumente o "Global file size limit" (ex.: 50 MB). No bucket "ticket-files", em Editar, aumente o limite de tamanho por arquivo.',
+      )
+    }
+    throw uploadError
+  }
+
+  const { error: insertError } = await supabase.from('ticket_files').insert({
+    ticket_id: ticketId,
+    uploaded_by: user.id,
+    kind,
+    storage_path: path,
+    file_name: file.name,
+    mime_type: file.type,
+    size_bytes: file.size,
+  })
+
+  if (insertError) throw insertError
+}
+
+/** Limite por foto no formulário público (10 MB). */
+export const MAX_PUBLIC_PHOTO_BYTES = 10 * 1024 * 1024
+
+/**
+ * Upload de foto sem login (formulário público /solicitar).
+ * Só funciona para tickets com origem = 'formulario'.
+ */
+export async function uploadTicketFilePublic(
+  ticketId: string,
+  file: File,
+): Promise<void> {
+  if (file.size > MAX_PUBLIC_PHOTO_BYTES) {
+    const mb = Math.round(MAX_PUBLIC_PHOTO_BYTES / (1024 * 1024))
+    throw new Error(`Imagem muito grande (máx. ${mb} MB).`)
+  }
+
+  const ext = file.name.split('.').pop() ?? 'jpg'
+  const path = `${ticketId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
+
+  const { error: uploadError } = await supabase.storage
+    .from(BUCKET)
+    .upload(path, file, {
+      cacheControl: '3600',
+      upsert: false,
+    })
+
+  if (uploadError) {
+    const msg = uploadError.message ?? ''
+    if (
+      /maximum allowed size|exceeded.*size|object.*size/i.test(msg) ||
+      uploadError.message?.includes('Payload too large')
+    ) {
+      throw new Error(
+        'Imagem maior que o limite. Use uma foto menor (até 10 MB).',
+      )
+    }
+    throw uploadError
+  }
 
   const { error: insertError } = await supabase.from('ticket_files').insert({
     ticket_id: ticketId,
     uploaded_by: null,
-    kind,
+    kind: 'foto',
     storage_path: path,
     file_name: file.name,
     mime_type: file.type,
@@ -429,9 +617,11 @@ function mapRowToTicket(row: any): Ticket {
 
   return {
     id: row.id,
+    codigo: row.codigo ?? null,
     titulo: row.titulo,
     descricao: row.descricao ?? null,
     tipo: row.tipo,
+    origem: (row.origem ?? 'interno') as TicketOrigem,
     solicitante_nome: row.solicitante_nome,
     solicitante_telefone: row.solicitante_telefone ?? null,
     categoria: row.categoria,
