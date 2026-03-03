@@ -11,8 +11,22 @@ import { ReadyGalleryPage } from './screens/ReadyGalleryPage'
 import { ReportsPage } from './screens/ReportsPage'
 import { SolicitarPage } from './screens/SolicitarPage'
 import { WhatsAppDemandsPage } from './screens/WhatsAppDemandsPage'
+import { isSupabaseConfigured } from './lib/supabaseClient'
 
 function App() {
+  if (!isSupabaseConfigured) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-slate-100 p-6 text-slate-800">
+        <div className="max-w-md rounded-xl border border-amber-200 bg-amber-50 p-6 text-center">
+          <h1 className="text-lg font-semibold text-amber-900">Configuração necessária</h1>
+          <p className="mt-2 text-sm text-amber-800">
+            Defina no Vercel (Settings → Environment Variables) as variáveis <strong>VITE_SUPABASE_URL</strong> e <strong>VITE_SUPABASE_ANON_KEY</strong> do seu projeto Supabase e faça um novo deploy.
+          </p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <AuthProvider>
       <BrowserRouter>
