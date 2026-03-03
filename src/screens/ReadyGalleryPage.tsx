@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { LayoutShell } from '../components/LayoutShell'
 import type { Ticket } from '../types/ticket'
-import { listTickets, listTicketFiles, TicketFile } from '../services/tickets'
+import { listTickets, listTicketFiles } from '../services/tickets'
+import type { TicketFile } from '../services/tickets'
 
 interface TicketWithPhoto extends Ticket {
   photo?: TicketFile

@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { FormEvent, SelectHTMLAttributes } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { LayoutShell } from '../components/LayoutShell'
 import { TicketStatusPill } from '../components/TicketStatusPill'
@@ -311,7 +312,7 @@ export function TicketListPage() {
 }
 
 interface SelectFieldProps
-  extends React.SelectHTMLAttributes<HTMLSelectElement> {
+  extends SelectHTMLAttributes<HTMLSelectElement> {
   label: string
 }
 

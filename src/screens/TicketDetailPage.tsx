@@ -1,4 +1,5 @@
-import { FormEvent, useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
+import type { FormEvent, ReactNode } from 'react'
 import { useParams } from 'react-router-dom'
 import { LayoutShell } from '../components/LayoutShell'
 import { TicketStatusPill } from '../components/TicketStatusPill'
@@ -7,13 +8,12 @@ import {
   addComment,
   listComments,
   listTicketFiles,
-  TicketComment,
-  TicketFile,
   updateTicketOrcamento,
   updateTicketStatus,
   uploadTicketFile,
   getTicket,
 } from '../services/tickets'
+import type { TicketComment, TicketFile } from '../services/tickets'
 import { useAuth } from '../auth/AuthContext'
 
 export function TicketDetailPage() {
@@ -482,7 +482,7 @@ export function TicketDetailPage() {
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleStatusChange('reprovado')}
+                            onClick={() => setOrcStatus('reprovado')}
                             className="rounded-full bg-rose-600 px-3 py-1 text-[11px] font-semibold text-rose-50 hover:bg-rose-500"
                           >
                             Marcar orçamento reprovado
@@ -606,7 +606,7 @@ function Field({
   children,
 }: {
   label: string
-  children: React.ReactNode
+  children: ReactNode
 }) {
   return (
     <div className="space-y-0.5 text-[11px]">

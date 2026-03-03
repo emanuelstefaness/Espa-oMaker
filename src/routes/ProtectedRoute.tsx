@@ -1,8 +1,9 @@
+import type { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 
 interface ProtectedRouteProps {
-  children: JSX.Element
+  children: ReactNode
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
