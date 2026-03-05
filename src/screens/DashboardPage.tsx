@@ -15,7 +15,10 @@ export function DashboardPage() {
   useEffect(() => {
     const load = async () => {
       try {
-        const { tickets: data } = await listTickets({}, { limit: 200 })
+        const { tickets: data } = await listTickets(
+          { includeCancelada: true },
+          { limit: 200 },
+        )
         setTickets(data)
       } catch {
         setTickets([])
@@ -26,7 +29,7 @@ export function DashboardPage() {
     load()
 
     const interval = setInterval(() => {
-      listTickets({}, { limit: 200 })
+      listTickets({ includeCancelada: true }, { limit: 200 })
         .then(({ tickets: data }) => setTickets(data))
         .catch(() => {})
     }, POLL_INTERVAL_MS)

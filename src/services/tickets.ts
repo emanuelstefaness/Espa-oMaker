@@ -24,6 +24,8 @@ export interface TicketFilters {
   /** Filtro por data de criação (para relatórios por período) */
   dataCriacaoInicial?: string
   dataCriacaoFinal?: string
+  /** Incluir demandas canceladas no resultado (ex.: dashboard para contar no card) */
+  includeCancelada?: boolean
 }
 
 export interface ListTicketsOptions {
@@ -100,7 +102,11 @@ export async function listTickets(
     query = query.eq('status', filters.status)
   }
 
-  if (filters.status !== 'cancelada' && !filters.statusIn?.length) {
+  if (
+    !filters.includeCancelada &&
+    filters.status !== 'cancelada' &&
+    !filters.statusIn?.length
+  ) {
     query = query.neq('status', 'cancelada')
   }
 
