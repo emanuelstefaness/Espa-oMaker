@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import type { TicketCategoria } from '../types/ticket'
 import { createTicket, uploadTicketFilePublic } from '../services/tickets'
-import { CATEGORIAS, MATERIAIS_IMPRESSAO } from '../constants/ticketOptions'
+import { MATERIAIS_IMPRESSAO } from '../constants/ticketOptions'
 import { CategorySelect } from '../components/CategorySelect'
 
 const MAX_IMAGENS = 5

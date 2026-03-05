@@ -8,7 +8,7 @@ import type {
   TicketTipo,
 } from '../types/ticket'
 import { createTicket, uploadTicketFile } from '../services/tickets'
-import { CATEGORIAS, MATERIAIS_IMPRESSAO } from '../constants/ticketOptions'
+import { MATERIAIS_IMPRESSAO } from '../constants/ticketOptions'
 import { CategorySelect } from '../components/CategorySelect'
 
 type AnexoKind = 'foto' | 'arquivo'
