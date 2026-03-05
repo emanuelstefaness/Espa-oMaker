@@ -5,7 +5,8 @@ import { TicketStatusPill } from '../components/TicketStatusPill'
 import { UserAvatar } from '../components/UserAvatar'
 import type { Ticket } from '../types/ticket'
 import { listTickets } from '../services/tickets'
-import { supabase } from '../lib/supabaseClient'
+
+const POLL_INTERVAL_MS = 15 * 60 * 1000 // 15 minutos
 
 export function DashboardPage() {
   const [tickets, setTickets] = useState<Ticket[]>([])
@@ -23,29 +24,14 @@ export function DashboardPage() {
       }
     }
     load()
-  }, [])
 
-  useEffect(() => {
-    const channel = supabase
-      .channel('dashboard-tickets')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'tickets',
-        },
-        () => {
-          listTickets({}, { limit: 200 })
-            .then(({ tickets: data }) => setTickets(data))
-            .catch(() => {})
-        },
-      )
-      .subscribe()
+    const interval = setInterval(() => {
+      listTickets({}, { limit: 200 })
+        .then(({ tickets: data }) => setTickets(data))
+        .catch(() => {})
+    }, POLL_INTERVAL_MS)
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
+    return () => clearInterval(interval)
   }, [])
 
   const recebidas = tickets.filter(
