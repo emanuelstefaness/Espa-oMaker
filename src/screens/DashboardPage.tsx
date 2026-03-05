@@ -81,14 +81,14 @@ export function DashboardPage() {
         t.status === 'em_analise'),
   )
 
-  const useCarousel = filaAtiva.length > 9
-  const [carouselPage, setCarouselPage] = useState(0)
   const PAGE_SIZE = 9
-  const totalPages = Math.ceil(filaAtiva.length / PAGE_SIZE) || 1
+  const [carouselPage, setCarouselPage] = useState(0)
+  const totalPages = Math.max(1, Math.ceil(filaAtiva.length / PAGE_SIZE))
   const filaAtivaPage = filaAtiva.slice(
     carouselPage * PAGE_SIZE,
     carouselPage * PAGE_SIZE + PAGE_SIZE,
   )
+  const temMultiplasPaginas = filaAtiva.length > PAGE_SIZE
 
   const scrollCarousel = (dir: 'prev' | 'next') => {
     if (dir === 'prev') {
@@ -99,12 +99,12 @@ export function DashboardPage() {
   }
 
   useEffect(() => {
-    if (!useCarousel || totalPages <= 1) return
+    if (!temMultiplasPaginas || totalPages <= 1) return
     const interval = setInterval(() => {
       setCarouselPage((p) => (p >= totalPages - 1 ? 0 : p + 1))
     }, 10000)
     return () => clearInterval(interval)
-  }, [useCarousel, totalPages])
+  }, [temMultiplasPaginas, totalPages])
 
   return (
     <LayoutShell>
@@ -177,14 +177,15 @@ export function DashboardPage() {
                 <div className="px-4 py-8 text-center text-sm text-slate-500">
                   Carregando...
                 </div>
-              ) : useCarousel ? (
+              ) : filaAtiva.length > 0 ? (
                 <>
                   <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-2 py-1">
                     <button
                       type="button"
                       onClick={() => scrollCarousel('prev')}
-                      className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                      className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
                       aria-label="Anterior"
+                      disabled={!temMultiplasPaginas}
                     >
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -192,23 +193,25 @@ export function DashboardPage() {
                     </button>
                     <span className="text-xs text-slate-500">
                       {filaAtiva.length} demandas — grade 3×3 — página {carouselPage + 1}/{totalPages}
+                      {temMultiplasPaginas && ' — rolagem a cada 10 s'}
                     </span>
                     <button
                       type="button"
                       onClick={() => scrollCarousel('next')}
-                      className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                      className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
                       aria-label="Próximo"
+                      disabled={!temMultiplasPaginas}
                     >
                       <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                       </svg>
                     </button>
                   </div>
-                  <div className="grid grid-cols-3 gap-2 py-3 px-2">
+                  <div className="grid grid-cols-3 grid-rows-3 gap-2 py-3 px-2 min-h-[280px]">
                     {filaAtivaPage.map((ticket) => (
                       <div
                         key={ticket.id}
-                        className="min-w-[160px] max-w-[160px] flex-shrink-0 snap-start rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2 transition-colors hover:bg-slate-100"
+                        className="rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2 transition-colors hover:bg-slate-100 flex flex-col min-h-0"
                       >
                         <Link
                           to={`/demandas/${ticket.id}`}
