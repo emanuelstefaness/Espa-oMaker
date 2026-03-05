@@ -7,6 +7,8 @@ import { CategorySelect } from '../components/CategorySelect'
 import { MaterialSelect } from '../components/MaterialSelect'
 
 const MAX_IMAGENS = 5
+const MAX_ARQUIVOS_3D = 5
+const EXTENSÕES_3D = '.stl,.3mf'
 
 export function SolicitarPage() {
   const [titulo, setTitulo] = useState('')
@@ -19,10 +21,12 @@ export function SolicitarPage() {
   const [cor, setCor] = useState('')
   const [quantidadePecas, setQuantidadePecas] = useState<number | ''>('')
   const [fotos, setFotos] = useState<File[]>([])
+  const [arquivos3d, setArquivos3d] = useState<File[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [enviado, setEnviado] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const arquivos3dInputRef = useRef<HTMLInputElement>(null)
 
   const addFotos = (files: FileList | null) => {
     if (!files?.length) return
@@ -35,6 +39,20 @@ export function SolicitarPage() {
 
   const removeFoto = (index: number) => {
     setFotos((prev) => prev.filter((_, i) => i !== index))
+  }
+
+  const addArquivos3d = (files: FileList | null) => {
+    if (!files?.length) return
+    const list = Array.from(files).filter(
+      (f) =>
+        f.name.toLowerCase().endsWith('.stl') ||
+        f.name.toLowerCase().endsWith('.3mf'),
+    )
+    setArquivos3d((prev) => [...prev, ...list].slice(0, MAX_ARQUIVOS_3D))
+  }
+
+  const removeArquivo3d = (index: number) => {
+    setArquivos3d((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async (event: FormEvent) => {
@@ -62,9 +80,16 @@ export function SolicitarPage() {
       })
       for (const file of fotos) {
         try {
-          await uploadTicketFilePublic(ticket.id, file)
+          await uploadTicketFilePublic(ticket.id, file, 'foto')
         } catch {
           // continua com as demais; a demanda já foi criada
+        }
+      }
+      for (const file of arquivos3d) {
+        try {
+          await uploadTicketFilePublic(ticket.id, file, 'arquivo')
+        } catch {
+          // continua com as demais
         }
       }
       setEnviado(true)
@@ -295,6 +320,55 @@ export function SolicitarPage() {
                     </div>
                   ))}
                 </div>
+              )}
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                Arquivos 3D — STL ou 3MF (até {MAX_ARQUIVOS_3D} arquivos)
+              </label>
+              <input
+                ref={arquivos3dInputRef}
+                type="file"
+                accept={EXTENSÕES_3D}
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  addArquivos3d(e.target.files)
+                  e.target.value = ''
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => arquivos3dInputRef.current?.click()}
+                disabled={arquivos3d.length >= MAX_ARQUIVOS_3D}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+              >
+                {arquivos3d.length >= MAX_ARQUIVOS_3D
+                  ? `Máximo ${MAX_ARQUIVOS_3D} arquivos`
+                  : 'Adicionar arquivos .stl ou .3mf'}
+              </button>
+              {arquivos3d.length > 0 && (
+                <p className="mt-1 text-xs text-slate-500">
+                  {arquivos3d.length} arquivo(s) — máx. 50 MB cada
+                </p>
+              )}
+              {arquivos3d.length > 0 && (
+                <ul className="mt-2 list-inside list-disc text-sm text-slate-600">
+                  {arquivos3d.map((file, i) => (
+                    <li key={i} className="flex items-center gap-2">
+                      <span className="truncate">{file.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => removeArquivo3d(i)}
+                        className="shrink-0 rounded bg-rose-500 px-1.5 py-0.5 text-xs text-white hover:bg-rose-600"
+                        aria-label="Remover"
+                      >
+                        Remover
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               )}
             </div>
 

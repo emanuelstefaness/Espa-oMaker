@@ -576,19 +576,22 @@ export async function uploadTicketFile(
 export const MAX_PUBLIC_PHOTO_BYTES = 10 * 1024 * 1024
 
 /**
- * Upload de foto sem login (formulário público /solicitar).
+ * Upload de foto ou arquivo (ex.: STL/3MF) sem login (formulário público /solicitar).
  * Só funciona para tickets com origem = 'formulario'.
  */
 export async function uploadTicketFilePublic(
   ticketId: string,
   file: File,
+  kind: 'foto' | 'arquivo' = 'foto',
 ): Promise<void> {
-  if (file.size > MAX_PUBLIC_PHOTO_BYTES) {
-    const mb = Math.round(MAX_PUBLIC_PHOTO_BYTES / (1024 * 1024))
-    throw new Error(`Imagem muito grande (máx. ${mb} MB).`)
+  const maxBytes =
+    kind === 'arquivo' ? MAX_UPLOAD_BYTES : MAX_PUBLIC_PHOTO_BYTES
+  if (file.size > maxBytes) {
+    const mb = Math.round(maxBytes / (1024 * 1024))
+    throw new Error(`Arquivo muito grande (máx. ${mb} MB).`)
   }
 
-  const ext = file.name.split('.').pop() ?? 'jpg'
+  const ext = file.name.split('.').pop() ?? (kind === 'foto' ? 'jpg' : 'bin')
   const path = `${ticketId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`
 
   const { error: uploadError } = await supabase.storage
@@ -604,8 +607,9 @@ export async function uploadTicketFilePublic(
       /maximum allowed size|exceeded.*size|object.*size/i.test(msg) ||
       uploadError.message?.includes('Payload too large')
     ) {
+      const maxMb = Math.round(maxBytes / (1024 * 1024))
       throw new Error(
-        'Imagem maior que o limite. Use uma foto menor (até 10 MB).',
+        `Arquivo maior que o limite. Use um arquivo de até ${maxMb} MB.`,
       )
     }
     throw uploadError
@@ -614,7 +618,7 @@ export async function uploadTicketFilePublic(
   const { error: insertError } = await supabase.from('ticket_files').insert({
     ticket_id: ticketId,
     uploaded_by: null,
-    kind: 'foto',
+    kind,
     storage_path: path,
     file_name: file.name,
     mime_type: file.type,

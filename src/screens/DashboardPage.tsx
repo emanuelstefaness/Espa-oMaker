@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { LayoutShell } from '../components/LayoutShell'
 import { TicketStatusPill } from '../components/TicketStatusPill'
@@ -82,14 +82,29 @@ export function DashboardPage() {
   )
 
   const useCarousel = filaAtiva.length > 4
-  const carouselRef = useRef<HTMLDivElement>(null)
+  const [carouselPage, setCarouselPage] = useState(0)
+  const PAGE_SIZE = 6
+  const totalPages = Math.ceil(filaAtiva.length / PAGE_SIZE) || 1
+  const filaAtivaPage = filaAtiva.slice(
+    carouselPage * PAGE_SIZE,
+    carouselPage * PAGE_SIZE + PAGE_SIZE,
+  )
 
   const scrollCarousel = (dir: 'prev' | 'next') => {
-    const el = carouselRef.current
-    if (!el) return
-    const cardWidth = 300
-    el.scrollBy({ left: dir === 'prev' ? -cardWidth : cardWidth, behavior: 'smooth' })
+    if (dir === 'prev') {
+      setCarouselPage((p) => (p <= 0 ? totalPages - 1 : p - 1))
+    } else {
+      setCarouselPage((p) => (p >= totalPages - 1 ? 0 : p + 1))
+    }
   }
+
+  useEffect(() => {
+    if (!useCarousel || totalPages <= 1) return
+    const interval = setInterval(() => {
+      setCarouselPage((p) => (p >= totalPages - 1 ? 0 : p + 1))
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [useCarousel, totalPages])
 
   return (
     <LayoutShell>
@@ -176,7 +191,7 @@ export function DashboardPage() {
                       </svg>
                     </button>
                     <span className="text-xs text-slate-500">
-                      {filaAtiva.length} demandas — deslize ou use as setas
+                      {filaAtiva.length} demandas — grade 3×2 — página {carouselPage + 1}/{totalPages}
                     </span>
                     <button
                       type="button"
@@ -189,15 +204,11 @@ export function DashboardPage() {
                       </svg>
                     </button>
                   </div>
-                  <div
-                    ref={carouselRef}
-                    className="flex gap-0 overflow-x-auto py-3 px-2 scroll-smooth"
-                    style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'thin' }}
-                  >
-                    {filaAtiva.map((ticket) => (
+                  <div className="grid grid-cols-3 gap-2 py-3 px-2">
+                    {filaAtivaPage.map((ticket) => (
                       <div
                         key={ticket.id}
-                        className="min-w-[280px] max-w-[280px] flex-shrink-0 snap-start rounded-lg border border-slate-100 bg-slate-50/50 px-4 py-3 transition-colors hover:bg-slate-100"
+                        className="min-w-[160px] max-w-[160px] flex-shrink-0 snap-start rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2 transition-colors hover:bg-slate-100"
                       >
                         <Link
                           to={`/demandas/${ticket.id}`}
