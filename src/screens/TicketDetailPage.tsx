@@ -253,7 +253,7 @@ export function TicketDetailPage() {
   }
 
   const podeAlterarStatus =
-    ticket.status !== 'cancelada' &&
+    !ticket.excluida_em &&
     (isFelipe || (isExecutor && isResponsavelOuColaborador(ticket)))
 
   return (
