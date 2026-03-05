@@ -5,6 +5,7 @@ create table if not exists public.app_users (
   id uuid primary key references auth.users (id) on delete cascade,
   name text not null,
   role text not null check (role in ('felipe', 'executor', 'admin')),
+  avatar_url text,
   created_at timestamptz not null default now()
 );
 
@@ -27,7 +28,10 @@ create table if not exists public.tickets (
   solicitante_telefone text,
 
   categoria text not null check (
-    categoria in ('impressao_3d', 'modelagem_3d', 'reparo', 'laser', 'outros')
+    categoria in (
+      'servicos_3d', 'reparos', 'engenharia', 'workshop',
+      'sublimacao', 'saude', 'servicos_gerais', 'outros'
+    )
   ),
   prioridade text not null check (
     prioridade in ('baixa', 'media', 'alta', 'urgente')
@@ -55,7 +59,7 @@ create table if not exists public.tickets (
   data_entrega date,
 
   material_impressao text check (
-    material_impressao in ('PLA', 'PETG', 'ABS', 'RESINA', 'OUTROS')
+    material_impressao in ('PLA', 'TPU', 'PETG', 'ABS', 'TRITAN', 'RESINA', 'OUTROS')
   ),
   cor text,
   quantidade_pecas integer,
@@ -75,6 +79,9 @@ create table if not exists public.tickets (
     )
   ),
   sem_cobranca boolean not null default false,
+
+  valor_demanda numeric(12, 2),
+  nivel_dificuldade text check (nivel_dificuldade in ('baixa', 'media', 'alta')),
 
   created_by uuid references public.app_users (id),
   updated_at timestamptz not null default now()
@@ -170,6 +177,31 @@ with check (
     auth.role() = 'authenticated'
     or public.ticket_permite_upload_anon(split_part(name, '/', 1)::uuid)
   )
+);
+
+-- Bucket avatares (foto do usuário)
+insert into storage.buckets (id, name, public)
+values ('avatars', 'avatars', true)
+on conflict (id) do nothing;
+
+create policy "Avatar leitura pública"
+on storage.objects for select
+using (bucket_id = 'avatars');
+
+create policy "Avatar upload próprio"
+on storage.objects for insert
+with check (
+  bucket_id = 'avatars'
+  and auth.role() = 'authenticated'
+  and (storage.foldername(name))[1] = auth.uid()::text
+);
+
+create policy "Avatar update próprio"
+on storage.objects for update
+using (
+  bucket_id = 'avatars'
+  and auth.role() = 'authenticated'
+  and (storage.foldername(name))[1] = auth.uid()::text
 );
 
 -- RLS / Permissões --------------------------------------------------------

@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import type { TicketCategoria } from '../types/ticket'
 import { createTicket, uploadTicketFilePublic } from '../services/tickets'
+import { CATEGORIAS, MATERIAIS_IMPRESSAO } from '../constants/ticketOptions'
 
 const MAX_IMAGENS = 5
 
@@ -11,7 +12,8 @@ export function SolicitarPage() {
   const [descricao, setDescricao] = useState('')
   const [solicitanteNome, setSolicitanteNome] = useState('')
   const [solicitanteTelefone, setSolicitanteTelefone] = useState('')
-  const [categoria, setCategoria] = useState<TicketCategoria>('impressao_3d')
+  const [categoria, setCategoria] = useState<TicketCategoria>('servicos_3d')
+  const [valor, setValor] = useState<number | ''>('')
   const [material, setMaterial] = useState<string>('PLA')
   const [cor, setCor] = useState('')
   const [quantidadePecas, setQuantidadePecas] = useState<number | ''>('')
@@ -48,11 +50,12 @@ export function SolicitarPage() {
         solicitante_telefone: solicitanteTelefone || undefined,
         categoria,
         prioridade: 'media',
+        valor_demanda: valor !== '' ? Number(valor) : undefined,
         material_impressao:
-          categoria === 'impressao_3d' ? material : undefined,
-        cor: categoria === 'impressao_3d' && cor ? cor : undefined,
+          categoria === 'servicos_3d' ? material : undefined,
+        cor: categoria === 'servicos_3d' && cor ? cor : undefined,
         quantidade_pecas:
-          categoria === 'impressao_3d' && quantidadePecas
+          categoria === 'servicos_3d' && quantidadePecas
             ? Number(quantidadePecas)
             : undefined,
       })
@@ -172,15 +175,37 @@ export function SolicitarPage() {
                 onChange={(e) => setCategoria(e.target.value as TicketCategoria)}
                 className={inputClass}
               >
-                <option value="impressao_3d">Impressão 3D</option>
-                <option value="modelagem_3d">Modelagem 3D</option>
-                <option value="reparo">Reparo</option>
-                <option value="laser">Laser</option>
-                <option value="outros">Outros</option>
+                {CATEGORIAS.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
               </select>
+              {CATEGORIAS.find((c) => c.value === categoria)?.descricao && (
+                <p className="mt-1 text-xs text-slate-500">
+                  {CATEGORIAS.find((c) => c.value === categoria)?.descricao}
+                </p>
+              )}
             </div>
 
-            {categoria === 'impressao_3d' && (
+            <div>
+              <label className={labelClass}>Valor estimado (R$) — opcional</label>
+              <input
+                type="number"
+                min={0}
+                step={0.01}
+                value={valor === '' ? '' : valor}
+                onChange={(e) =>
+                  setValor(
+                    e.target.value === '' ? '' : Number(e.target.value),
+                  )
+                }
+                className={inputClass}
+                placeholder="Ex: 50,00"
+              />
+            </div>
+
+            {categoria === 'servicos_3d' && (
               <div className="grid gap-4 sm:grid-cols-3">
                 <div>
                   <label className={labelClass}>Material (opcional)</label>
@@ -189,12 +214,21 @@ export function SolicitarPage() {
                     onChange={(e) => setMaterial(e.target.value)}
                     className={inputClass}
                   >
-                    <option value="PLA">PLA</option>
-                    <option value="PETG">PETG</option>
-                    <option value="ABS">ABS</option>
-                    <option value="RESINA">Resina</option>
-                    <option value="OUTROS">Outros</option>
+                    {MATERIAIS_IMPRESSAO.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
                   </select>
+                  {MATERIAIS_IMPRESSAO.find((m) => m.value === material)
+                    ?.descricao && (
+                    <p className="mt-1 text-xs text-slate-500">
+                      {
+                        MATERIAIS_IMPRESSAO.find((m) => m.value === material)
+                          ?.descricao
+                      }
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className={labelClass}>Cor (opcional)</label>

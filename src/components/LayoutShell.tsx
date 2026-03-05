@@ -1,9 +1,27 @@
+import { useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
+import { uploadAvatar } from '../services/appUsers'
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
-  const { appUser, signOut } = useAuth()
+  const { appUser, signOut, refreshAppUser } = useAuth()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const isFelipe = appUser?.role === 'felipe'
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !appUser) return
+    if (!file.type.startsWith('image/')) return
+    setUploadingAvatar(true)
+    try {
+      await uploadAvatar(appUser.id, file)
+      await refreshAppUser()
+    } finally {
+      setUploadingAvatar(false)
+      e.target.value = ''
+    }
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-50 text-slate-800">
@@ -114,17 +132,54 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="border-t border-slate-100 p-3">
-          <p className="truncate text-sm font-medium text-slate-800">
-            {appUser?.name}
-          </p>
-          <p className="truncate text-xs text-slate-500">{appUser?.email}</p>
-          <p className="mt-1 text-xs text-slate-400">
-            {isFelipe ? 'Triagem' : 'Executor'}
-          </p>
+          <div className="flex items-center gap-3">
+            <label className="relative cursor-pointer">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="sr-only"
+                onChange={handleAvatarChange}
+                disabled={uploadingAvatar}
+              />
+              {appUser?.avatar_url ? (
+                <img
+                  src={appUser.avatar_url}
+                  alt=""
+                  className="h-10 w-10 rounded-full object-cover ring-2 ring-slate-200"
+                />
+              ) : (
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-sm font-medium text-slate-600">
+                  {appUser?.name?.charAt(0)?.toUpperCase() ?? '?'}
+                </div>
+              )}
+              {uploadingAvatar && (
+                <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-xs text-white">
+                  ...
+                </span>
+              )}
+            </label>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-slate-800">
+                {appUser?.name}
+              </p>
+              <p className="truncate text-xs text-slate-500">{appUser?.email}</p>
+              <p className="text-xs text-slate-400">
+                {isFelipe ? 'Triagem' : 'Executor'}
+              </p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="mt-2 text-xs text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline"
+          >
+            Alterar foto
+          </button>
           <button
             type="button"
             onClick={() => signOut()}
-            className="mt-2 text-xs text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline"
+            className="mt-1 block text-xs text-slate-500 underline-offset-2 hover:text-slate-700 hover:underline"
           >
             Sair
           </button>
@@ -137,6 +192,17 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
             Cilla Tech Park · Espaço Maker
           </p>
           <div className="flex items-center gap-2">
+            {appUser?.avatar_url ? (
+              <img
+                src={appUser.avatar_url}
+                alt=""
+                className="h-8 w-8 rounded-full object-cover"
+              />
+            ) : (
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-xs font-medium text-slate-600">
+                {appUser?.name?.charAt(0)?.toUpperCase() ?? '?'}
+              </div>
+            )}
             <span className="max-w-[120px] truncate text-right text-sm text-slate-600">
               {appUser?.name}
             </span>

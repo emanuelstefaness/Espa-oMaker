@@ -8,6 +8,7 @@ import type {
   TicketTipo,
 } from '../types/ticket'
 import { createTicket, uploadTicketFile } from '../services/tickets'
+import { CATEGORIAS, MATERIAIS_IMPRESSAO } from '../constants/ticketOptions'
 
 type AnexoKind = 'foto' | 'arquivo'
 
@@ -23,7 +24,7 @@ export function NewTicketPage() {
   const [tipo, setTipo] = useState<TicketTipo>('externa')
   const [solicitanteNome, setSolicitanteNome] = useState('')
   const [solicitanteTelefone, setSolicitanteTelefone] = useState('')
-  const [categoria, setCategoria] = useState<TicketCategoria>('impressao_3d')
+  const [categoria, setCategoria] = useState<TicketCategoria>('servicos_3d')
   const [prioridade, setPrioridade] = useState<TicketPrioridade>('media')
   const [dataEntrega, setDataEntrega] = useState('')
 
@@ -74,16 +75,16 @@ export function NewTicketPage() {
         prioridade,
         data_entrega: dataEntrega || undefined,
         material_impressao:
-          categoria === 'impressao_3d' ? material : undefined,
-        cor: categoria === 'impressao_3d' ? cor || undefined : undefined,
+          categoria === 'servicos_3d' ? material : undefined,
+        cor: categoria === 'servicos_3d' ? cor || undefined : undefined,
         quantidade_pecas:
-          categoria === 'impressao_3d' && quantidadePecas
+          categoria === 'servicos_3d' && quantidadePecas
             ? Number(quantidadePecas)
             : undefined,
         tamanho_escala:
-          categoria === 'impressao_3d' ? tamanhoEscala || undefined : undefined,
+          categoria === 'servicos_3d' ? tamanhoEscala || undefined : undefined,
         observacoes_tecnicas:
-          categoria === 'impressao_3d'
+          categoria === 'servicos_3d'
             ? observacoesTecnicas || undefined
             : undefined,
       })
@@ -195,12 +196,17 @@ export function NewTicketPage() {
                 }
                 className={inputClass}
               >
-                <option value="impressao_3d">Impressão 3D</option>
-                <option value="modelagem_3d">Modelagem 3D</option>
-                <option value="reparo">Reparo</option>
-                <option value="laser">Laser</option>
-                <option value="outros">Outros</option>
+                {CATEGORIAS.map((c) => (
+                  <option key={c.value} value={c.value}>
+                    {c.label}
+                  </option>
+                ))}
               </select>
+              {CATEGORIAS.find((c) => c.value === categoria)?.descricao && (
+                <p className="mt-1 text-xs text-slate-500">
+                  {CATEGORIAS.find((c) => c.value === categoria)?.descricao}
+                </p>
+              )}
             </div>
             <div>
               <label className={labelClass}>Prioridade</label>
@@ -228,10 +234,10 @@ export function NewTicketPage() {
             </div>
           </div>
 
-          {categoria === 'impressao_3d' && (
+          {categoria === 'servicos_3d' && (
             <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
               <h3 className="text-sm font-semibold text-slate-700">
-                Impressão 3D
+                Serviços 3D
               </h3>
               <div className="grid gap-4 sm:grid-cols-3">
                 <div>
@@ -241,12 +247,21 @@ export function NewTicketPage() {
                     onChange={(e) => setMaterial(e.target.value)}
                     className={inputClass}
                   >
-                    <option value="PLA">PLA</option>
-                    <option value="PETG">PETG</option>
-                    <option value="ABS">ABS</option>
-                    <option value="RESINA">Resina</option>
-                    <option value="OUTROS">Outros</option>
+                    {MATERIAIS_IMPRESSAO.map((m) => (
+                      <option key={m.value} value={m.value}>
+                        {m.label}
+                      </option>
+                    ))}
                   </select>
+                  {MATERIAIS_IMPRESSAO.find((m) => m.value === material)
+                    ?.descricao && (
+                    <p className="mt-1 text-xs text-slate-500">
+                      {
+                        MATERIAIS_IMPRESSAO.find((m) => m.value === material)
+                          ?.descricao
+                      }
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className={labelClass}>Cor</label>

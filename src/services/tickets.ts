@@ -73,6 +73,8 @@ export async function listTickets(
       observacoes_orcamento,
       status_orcamento,
       sem_cobranca,
+      valor_demanda,
+      nivel_dificuldade,
       responsavel:responsavel_id ( id, name )
     `,
   )
@@ -167,6 +169,8 @@ export async function getTicket(id: string): Promise<Ticket | null> {
         observacoes_orcamento,
         status_orcamento,
         sem_cobranca,
+        valor_demanda,
+        nivel_dificuldade,
         responsavel:responsavel_id ( id, name )
       `,
     )
@@ -192,6 +196,7 @@ export interface CreateTicketInput {
   categoria: TicketCategoria
   prioridade: TicketPrioridade
   data_entrega?: string
+  valor_demanda?: number | null
   material_impressao?: string
   cor?: string
   quantidade_pecas?: number
@@ -218,6 +223,7 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
       categoria: input.categoria,
       prioridade: input.prioridade,
       data_entrega: input.data_entrega ?? null,
+      valor_demanda: input.valor_demanda ?? null,
       material_impressao: input.material_impressao ?? null,
       cor: input.cor ?? null,
       quantidade_pecas: input.quantidade_pecas ?? null,
@@ -277,6 +283,8 @@ const TICKET_SELECT_WITH_RESPONSAVEL = `
   observacoes_orcamento,
   status_orcamento,
   sem_cobranca,
+  valor_demanda,
+  nivel_dificuldade,
   responsavel:responsavel_id ( id, name )
 `
 
@@ -315,6 +323,8 @@ export interface UpdateTicketDadosInput {
   quantidade_pecas?: number | null
   tamanho_escala?: string | null
   observacoes_tecnicas?: string | null
+  valor_demanda?: number | null
+  nivel_dificuldade?: import('../types/ticket').NivelDificuldade | null
 }
 
 export async function updateTicketDados(
@@ -341,6 +351,10 @@ export async function updateTicketDados(
     updatePayload.tamanho_escala = payload.tamanho_escala
   if (payload.observacoes_tecnicas !== undefined)
     updatePayload.observacoes_tecnicas = payload.observacoes_tecnicas
+  if (payload.valor_demanda !== undefined)
+    updatePayload.valor_demanda = payload.valor_demanda
+  if (payload.nivel_dificuldade !== undefined)
+    updatePayload.nivel_dificuldade = payload.nivel_dificuldade
 
   const { data, error } = await supabase
     .from('tickets')
@@ -627,7 +641,7 @@ export async function listTicketFiles(ticketId: string): Promise<TicketFile[]> {
 
 function mapRowToTicket(row: any): Ticket {
   const impressao3d =
-    row.categoria === 'impressao_3d'
+    row.categoria === 'servicos_3d'
       ? {
           material: (row.material_impressao ?? 'PLA') as any,
           cor: row.cor,
@@ -667,6 +681,8 @@ function mapRowToTicket(row: any): Ticket {
     colaborador_id: row.colaborador_id ?? null,
     data_criacao: row.data_criacao,
     data_entrega: row.data_entrega ?? null,
+    valor_demanda: row.valor_demanda != null ? Number(row.valor_demanda) : null,
+    nivel_dificuldade: row.nivel_dificuldade ?? null,
     impressao3d,
     orcamento: orcamento ?? null,
   }

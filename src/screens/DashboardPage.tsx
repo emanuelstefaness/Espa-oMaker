@@ -4,6 +4,7 @@ import { LayoutShell } from '../components/LayoutShell'
 import { TicketStatusPill } from '../components/TicketStatusPill'
 import type { Ticket } from '../types/ticket'
 import { listTickets } from '../services/tickets'
+import { supabase } from '../lib/supabaseClient'
 
 export function DashboardPage() {
   const [tickets, setTickets] = useState<Ticket[]>([])
@@ -21,6 +22,29 @@ export function DashboardPage() {
       }
     }
     load()
+  }, [])
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('dashboard-tickets')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tickets',
+        },
+        () => {
+          listTickets({}, { limit: 200 })
+            .then(({ tickets: data }) => setTickets(data))
+            .catch(() => {})
+        },
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   const recebidas = tickets.filter(

@@ -1,5 +1,6 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
@@ -7,14 +8,17 @@ import {
 } from 'react'
 import type { User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabaseClient'
-
-type AppUserRole = 'felipe' | 'executor' | 'admin'
+import {
+  getAppUserProfile,
+  type AppUserRole,
+} from '../services/appUsers'
 
 export interface AppUser {
   id: string
   name: string
   email: string
   role: AppUserRole
+  avatar_url: string | null
 }
 
 interface AuthContextValue {
@@ -23,6 +27,7 @@ interface AuthContextValue {
   loading: boolean
   signIn: (email: string, password: string) => Promise<void>
   signOut: () => Promise<void>
+  refreshAppUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -36,10 +41,42 @@ function mapRole(email: string): AppUserRole {
   return 'executor'
 }
 
+async function resolveAppUser(user: User): Promise<AppUser> {
+  const email = user.email ?? ''
+  const fallback = {
+    id: user.id,
+    name: user.user_metadata?.name ?? email.split('@')[0],
+    email,
+    role: mapRole(email),
+    avatar_url: null as string | null,
+  }
+  const profile = await getAppUserProfile(user.id)
+  if (profile) {
+    return {
+      id: user.id,
+      name: profile.name,
+      email,
+      role: profile.role,
+      avatar_url: profile.avatar_url,
+    }
+  }
+  return fallback
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [supabaseUser, setSupabaseUser] = useState<User | null>(null)
   const [appUser, setAppUser] = useState<AppUser | null>(null)
   const [loading, setLoading] = useState(true)
+
+  const refreshAppUser = useCallback(async () => {
+    if (!supabaseUser) return
+    try {
+      const next = await resolveAppUser(supabaseUser)
+      setAppUser(next)
+    } catch {
+      // mantém estado atual
+    }
+  }, [supabaseUser])
 
   useEffect(() => {
     const {
@@ -48,34 +85,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const user = session?.user ?? null
       setSupabaseUser(user ?? null)
       if (user) {
-        const email = user.email ?? ''
-        const name = user.user_metadata?.name ?? email.split('@')[0]
-        setAppUser({
-          id: user.id,
-          name,
-          email,
-          role: mapRole(email),
-        })
+        resolveAppUser(user).then(setAppUser).finally(() => setLoading(false))
       } else {
         setAppUser(null)
+        setLoading(false)
       }
-      setLoading(false)
     })
 
     supabase.auth.getSession().then(({ data }) => {
       const user = data.session?.user ?? null
       setSupabaseUser(user ?? null)
       if (user) {
-        const email = user.email ?? ''
-        const name = user.user_metadata?.name ?? email.split('@')[0]
-        setAppUser({
-          id: user.id,
-          name,
-          email,
-          role: mapRole(email),
-        })
+        resolveAppUser(user).then(setAppUser).finally(() => setLoading(false))
+      } else {
+        setLoading(false)
       }
-      setLoading(false)
     })
 
     return () => {
@@ -102,6 +126,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     loading,
     signIn,
     signOut,
+    refreshAppUser,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

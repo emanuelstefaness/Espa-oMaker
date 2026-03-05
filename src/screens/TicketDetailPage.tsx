@@ -20,6 +20,7 @@ import {
 } from '../services/tickets'
 import type { TicketComment, TicketFile } from '../services/tickets'
 import { useAuth } from '../auth/AuthContext'
+import { CATEGORIAS, MATERIAIS_IMPRESSAO } from '../constants/ticketOptions'
 
 export function TicketDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -45,7 +46,7 @@ export function TicketDetailPage() {
     descricao: '',
     solicitante_nome: '',
     solicitante_telefone: '',
-    categoria: 'impressao_3d' as TicketCategoria,
+    categoria: 'servicos_3d' as TicketCategoria,
     prioridade: 'media' as TicketPrioridade,
     data_entrega: '',
     material_impressao: '',
@@ -53,6 +54,7 @@ export function TicketDetailPage() {
     quantidade_pecas: '' as number | '',
     tamanho_escala: '',
     observacoes_tecnicas: '',
+    valor_demanda: '' as number | '',
   })
 
   useEffect(() => {
@@ -155,6 +157,7 @@ export function TicketDetailPage() {
       tamanho_escala: ticket.impressao3d?.tamanho_escala ?? '',
       observacoes_tecnicas:
         ticket.impressao3d?.observacoes_tecnicas ?? '',
+      valor_demanda: ticket.valor_demanda ?? ('' as number | ''),
     })
     setEditingDados(true)
   }
@@ -173,25 +176,29 @@ export function TicketDetailPage() {
         prioridade: formDados.prioridade,
         data_entrega: formDados.data_entrega || null,
         material_impressao:
-          formDados.categoria === 'impressao_3d' && formDados.material_impressao
+          formDados.categoria === 'servicos_3d' && formDados.material_impressao
             ? formDados.material_impressao
             : null,
         cor:
-          formDados.categoria === 'impressao_3d' && formDados.cor
+          formDados.categoria === 'servicos_3d' && formDados.cor
             ? formDados.cor
             : null,
         quantidade_pecas:
-          formDados.categoria === 'impressao_3d' && formDados.quantidade_pecas
+          formDados.categoria === 'servicos_3d' && formDados.quantidade_pecas
             ? Number(formDados.quantidade_pecas)
             : null,
         tamanho_escala:
-          formDados.categoria === 'impressao_3d' && formDados.tamanho_escala
+          formDados.categoria === 'servicos_3d' && formDados.tamanho_escala
             ? formDados.tamanho_escala
             : null,
         observacoes_tecnicas:
-          formDados.categoria === 'impressao_3d' &&
+          formDados.categoria === 'servicos_3d' &&
           formDados.observacoes_tecnicas
             ? formDados.observacoes_tecnicas
+            : null,
+        valor_demanda:
+          formDados.valor_demanda !== ''
+            ? Number(formDados.valor_demanda)
             : null,
       })
       setTicket(updated)
@@ -369,12 +376,22 @@ export function TicketDetailPage() {
                         }
                         className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                       >
-                        <option value="impressao_3d">Impressão 3D</option>
-                        <option value="modelagem_3d">Modelagem 3D</option>
-                        <option value="reparo">Reparo</option>
-                        <option value="laser">Laser</option>
-                        <option value="outros">Outros</option>
+                        {CATEGORIAS.map((c) => (
+                          <option key={c.value} value={c.value}>
+                            {c.label}
+                          </option>
+                        ))}
                       </select>
+                      {CATEGORIAS.find((c) => c.value === formDados.categoria)
+                        ?.descricao && (
+                        <p className="mt-1 text-xs text-slate-500">
+                          {
+                            CATEGORIAS.find(
+                              (c) => c.value === formDados.categoria,
+                            )?.descricao
+                          }
+                        </p>
+                      )}
                     </div>
                     <div>
                       <label className="mb-1 block text-xs font-medium text-slate-600">
@@ -395,6 +412,28 @@ export function TicketDetailPage() {
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-slate-600">
+                      Valor da demanda (R$)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={formDados.valor_demanda === '' ? '' : formDados.valor_demanda}
+                      onChange={(e) =>
+                        setFormDados((p) => ({
+                          ...p,
+                          valor_demanda:
+                            e.target.value === ''
+                              ? ('' as number | '')
+                              : Number(e.target.value),
+                        }))
+                      }
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      placeholder="0,00"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600">
                       Descrição
                     </label>
                     <textarea
@@ -406,30 +445,41 @@ export function TicketDetailPage() {
                       className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                     />
                   </div>
-                  {formDados.categoria === 'impressao_3d' && (
+                  {formDados.categoria === 'servicos_3d' && (
                     <div className="grid gap-3 rounded-lg border border-slate-100 bg-slate-50/50 p-3 md:grid-cols-2">
                       <div>
                         <label className="mb-1 block text-xs font-medium text-slate-600">
-                        Material
-                      </label>
-                      <select
-                        value={formDados.material_impressao}
-                        onChange={(e) =>
-                          setFormDados((p) => ({
-                            ...p,
-                            material_impressao: e.target.value,
-                          }))
-                        }
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                      >
-                        <option value="">—</option>
-                        <option value="PLA">PLA</option>
-                        <option value="PETG">PETG</option>
-                        <option value="ABS">ABS</option>
-                        <option value="RESINA">Resina</option>
-                        <option value="OUTROS">Outros</option>
-                      </select>
-                    </div>
+                          Material
+                        </label>
+                        <select
+                          value={formDados.material_impressao}
+                          onChange={(e) =>
+                            setFormDados((p) => ({
+                              ...p,
+                              material_impressao: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        >
+                          <option value="">—</option>
+                          {MATERIAIS_IMPRESSAO.map((m) => (
+                            <option key={m.value} value={m.value}>
+                              {m.label}
+                            </option>
+                          ))}
+                        </select>
+                        {MATERIAIS_IMPRESSAO.find(
+                          (m) => m.value === formDados.material_impressao,
+                        )?.descricao && (
+                          <p className="mt-1 text-xs text-slate-500">
+                            {
+                              MATERIAIS_IMPRESSAO.find(
+                                (m) => m.value === formDados.material_impressao,
+                              )?.descricao
+                            }
+                          </p>
+                        )}
+                      </div>
                     <div>
                       <label className="mb-1 block text-xs font-medium text-slate-600">
                         Cor
@@ -524,18 +574,16 @@ export function TicketDetailPage() {
                       {ticket.prioridade.toUpperCase()}
                     </Field>
                     <Field label="Categoria">
-                      {ticket.categoria === 'impressao_3d'
-                        ? 'Impressão 3D'
-                        : ticket.categoria === 'modelagem_3d'
-                          ? 'Modelagem 3D'
-                          : ticket.categoria === 'reparo'
-                            ? 'Reparo'
-                            : ticket.categoria === 'laser'
-                              ? 'Laser'
-                              : 'Outros'}
+                      {CATEGORIAS.find((c) => c.value === ticket.categoria)
+                        ?.label ?? ticket.categoria}
                     </Field>
                     <Field label="Prazo de entrega">
                       {ticket.data_entrega ?? '—'}
+                    </Field>
+                    <Field label="Valor da demanda">
+                      {ticket.valor_demanda != null
+                        ? `R$ ${Number(ticket.valor_demanda).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                        : '—'}
                     </Field>
                     <Field label="Criada em">{ticket.data_criacao}</Field>
                     <Field label="Telefone do solicitante">
@@ -555,10 +603,10 @@ export function TicketDetailPage() {
               )}
             </div>
 
-            {ticket.categoria === 'impressao_3d' && ticket.impressao3d && (
+            {ticket.categoria === 'servicos_3d' && ticket.impressao3d && (
               <div className="space-y-2 rounded-xl border border-slate-200 bg-blue-50/50 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-blue-800">
-                  Impressão 3D
+                  Serviços 3D
                 </p>
                 <div className="grid gap-3 md:grid-cols-2">
                   <Field label="Material">{ticket.impressao3d.material}</Field>

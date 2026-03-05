@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { LayoutShell } from '../components/LayoutShell'
 import type { Ticket } from '../types/ticket'
 import { listTickets } from '../services/tickets'
@@ -9,18 +9,72 @@ interface ReportsData {
   tempoMedioEntregaDias: number | null
 }
 
+const COLS_RELATORIO = [
+  'STATUS',
+  'RESPONSÁVEL',
+  'CLIENTE',
+  'PRODUTO',
+  'MATERIAL',
+  'COR',
+  'QUANTIDADE TOTAL',
+  'VALOR DO PRODUTO',
+  'PRAZO DE ENTREGA',
+] as const
+
+function ticketToRow(t: Ticket): string[] {
+  const valor =
+    t.valor_demanda != null
+      ? Number(t.valor_demanda).toLocaleString('pt-BR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      : ''
+  return [
+    t.status,
+    t.responsavel_nome ?? '',
+    t.solicitante_nome ?? '',
+    t.titulo ?? '',
+    t.impressao3d?.material ?? '',
+    t.impressao3d?.cor ?? '',
+    String(t.impressao3d?.quantidade_pecas ?? ''),
+    valor,
+    t.data_entrega ?? '',
+  ]
+}
+
+function exportXLS(tickets: Ticket[]) {
+  const BOM = '\uFEFF'
+  const header = COLS_RELATORIO.join(';')
+  const rows = tickets.map((t) =>
+    ticketToRow(t)
+      .map((c) => `"${String(c).replace(/"/g, '""')}"`)
+      .join(';'),
+  )
+  const csv = BOM + header + '\r\n' + rows.join('\r\n')
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `relatorio-demandas-${new Date().toISOString().slice(0, 10)}.xls`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
 export function ReportsPage() {
   const [data, setData] = useState<ReportsData | null>(null)
+  const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const printRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true)
         setError(null)
-        const { tickets } = await listTickets({}, { limit: 5000 })
-        const reports = buildReports(tickets)
+        const { tickets: list } = await listTickets({}, { limit: 5000 })
+        setTickets(list)
+        const reports = buildReports(list)
         setData(reports)
       } catch (err) {
         const message =
@@ -33,6 +87,29 @@ export function ReportsPage() {
 
     void load()
   }, [])
+
+  const handleExportPDF = () => {
+    if (!printRef.current) return
+    const prevTitle = document.title
+    document.title = `Relatório de demandas - ${new Date().toISOString().slice(0, 10)}`
+    const printContent = printRef.current.innerHTML
+    const win = window.open('', '_blank')
+    if (!win) return
+    win.document.write(`
+      <!DOCTYPE html><html><head><meta charset="utf-8"><title>${document.title}</title>
+      <style>
+        body { font-family: system-ui, sans-serif; font-size: 12px; padding: 16px; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 6px 8px; text-align: left; }
+        th { background: #f1f5f9; }
+      </style></head><body>${printContent}</body></html>
+    `)
+    win.document.close()
+    win.focus()
+    win.print()
+    win.close()
+    document.title = prevTitle
+  }
 
   return (
     <LayoutShell>
@@ -108,6 +185,98 @@ export function ReportsPage() {
               <p className="mt-1 text-xs text-blue-700">
                 Demandas entregues com data preenchida.
               </p>
+            </div>
+          </div>
+        )}
+
+        {/* Relatório de demandas (tabela + exportação) */}
+        {!loading && !error && (
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-slate-800">
+                Relatório de demandas
+              </h2>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => exportXLS(tickets)}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Exportar XLS
+                </button>
+                <button
+                  type="button"
+                  onClick={handleExportPDF}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                >
+                  Exportar PDF
+                </button>
+              </div>
+            </div>
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-full border-collapse border border-slate-200 text-left text-sm">
+                <thead>
+                  <tr className="bg-slate-50">
+                    {COLS_RELATORIO.map((col) => (
+                      <th
+                        key={col}
+                        className="border border-slate-200 px-3 py-2 font-semibold text-slate-700"
+                      >
+                        {col}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {tickets.map((t) => (
+                    <tr key={t.id} className="border-b border-slate-100">
+                      {ticketToRow(t).map((cell, i) => (
+                        <td
+                          key={i}
+                          className="border border-slate-100 px-3 py-2 text-slate-600"
+                        >
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                  {tickets.length === 0 && (
+                    <tr>
+                      <td
+                        colSpan={COLS_RELATORIO.length}
+                        className="border border-slate-100 px-3 py-4 text-center text-slate-500"
+                      >
+                        Nenhuma demanda encontrada.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {/* Área usada só na impressão/PDF */}
+            <div
+              ref={printRef}
+              className="hidden"
+              aria-hidden
+            >
+              <table>
+                <thead>
+                  <tr>
+                    {COLS_RELATORIO.map((col) => (
+                      <th key={col}>{col}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {tickets.map((t) => (
+                    <tr key={t.id}>
+                      {ticketToRow(t).map((cell, i) => (
+                        <td key={i}>{cell}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
         )}

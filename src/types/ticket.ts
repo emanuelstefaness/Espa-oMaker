@@ -3,13 +3,18 @@ export type TicketTipo = 'interna' | 'externa'
 export type TicketOrigem = 'interno' | 'formulario'
 
 export type TicketCategoria =
-  | 'impressao_3d'
-  | 'modelagem_3d'
-  | 'reparo'
-  | 'laser'
+  | 'servicos_3d'
+  | 'reparos'
+  | 'engenharia'
+  | 'workshop'
+  | 'sublimacao'
+  | 'saude'
+  | 'servicos_gerais'
   | 'outros'
 
 export type TicketPrioridade = 'baixa' | 'media' | 'alta' | 'urgente'
+
+export type NivelDificuldade = 'baixa' | 'media' | 'alta'
 
 export type TicketStatus =
   | 'recebida'
@@ -36,7 +41,7 @@ export interface TicketOrcamento {
 }
 
 export interface TicketImpressao3D {
-  material: 'PLA' | 'PETG' | 'ABS' | 'RESINA' | 'OUTROS'
+  material: 'PLA' | 'TPU' | 'PETG' | 'ABS' | 'TRITAN' | 'RESINA' | 'OUTROS'
   cor?: string | null
   quantidade_pecas?: number | null
   tamanho_escala?: string | null
@@ -62,6 +67,8 @@ export interface Ticket {
   data_criacao: string
   data_entrega?: string | null
   atraso?: boolean
+  valor_demanda?: number | null
+  nivel_dificuldade?: NivelDificuldade | null
   impressao3d?: TicketImpressao3D | null
   orcamento?: TicketOrcamento | null
 }
