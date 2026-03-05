@@ -56,6 +56,7 @@ export function DashboardPage() {
   ).length
   const prontas = tickets.filter((t) => t.status === 'pronta').length
   const entregues = tickets.filter((t) => t.status === 'entregue').length
+  const canceladas = tickets.filter((t) => t.status === 'cancelada').length
   const filaAtiva = tickets.filter(
     (t) =>
       t.status !== 'entregue' &&
@@ -112,36 +113,48 @@ export function DashboardPage() {
           </Link>
         </header>
 
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
           <SummaryCard
+            to="/demandas?status=recebida,em_analise,orcamento_em_criacao"
             label="Recebidas"
             value={recebidas}
             className="border-slate-200 bg-white text-slate-700"
           />
           <SummaryCard
+            to="/demandas?status=aguardando_aprovacao,aprovado"
             label="Aguardando aprovação"
             value={aguardando}
             className="border-amber-200 bg-amber-50 text-amber-800"
           />
           <SummaryCard
+            to="/demandas?status=em_producao,pos_processo"
             label="Em produção"
             value={emProducao}
             className="border-violet-200 bg-violet-50 text-violet-800"
           />
           <SummaryCard
+            to="/demandas?status=atrasadas"
             label="Atrasadas"
             value={atrasadas}
             className="border-rose-200 bg-rose-50 text-rose-800"
           />
           <SummaryCard
+            to="/demandas?status=pronta"
             label="Prontas"
             value={prontas}
             className="border-lime-200 bg-lime-50 text-lime-800"
           />
           <SummaryCard
+            to="/demandas?status=entregue"
             label="Entregues"
             value={entregues}
             className="border-slate-200 bg-slate-100 text-slate-700"
+          />
+          <SummaryCard
+            to="/demandas?status=cancelada"
+            label="Canceladas"
+            value={canceladas}
+            className="border-slate-300 bg-slate-100 text-slate-600"
           />
         </div>
 
@@ -313,20 +326,37 @@ export function DashboardPage() {
 }
 
 function SummaryCard({
+  to,
   label,
   value,
   className,
 }: {
+  to?: string
   label: string
   value: number
   className: string
 }) {
+  const content = (
+    <>
+      <p className="text-2xl font-semibold">{value}</p>
+      <p className="mt-0.5 text-xs font-medium text-slate-500">{label}</p>
+    </>
+  )
+  if (to) {
+    return (
+      <Link
+        to={to}
+        className={`block rounded-xl border px-4 py-4 shadow-sm transition-shadow hover:shadow ${className}`}
+      >
+        {content}
+      </Link>
+    )
+  }
   return (
     <div
       className={`rounded-xl border px-4 py-4 shadow-sm transition-shadow hover:shadow ${className}`}
     >
-      <p className="text-2xl font-semibold">{value}</p>
-      <p className="mt-0.5 text-xs font-medium text-slate-500">{label}</p>
+      {content}
     </div>
   )
 }

@@ -11,6 +11,8 @@ import type {
 export interface TicketFilters {
   search?: string
   status?: TicketStatus | 'atrasadas' | 'prazo_hoje'
+  /** Múltiplos status (ex.: recebida + em_analise + orcamento_em_criacao para "Recebidas") */
+  statusIn?: TicketStatus[]
   responsavelId?: string
   prioridade?: TicketPrioridade
   categoria?: TicketCategoria
@@ -83,11 +85,19 @@ export async function listTickets(
     `,
   )
 
-  if (filters.status && filters.status !== 'atrasadas' && filters.status !== 'prazo_hoje') {
+  const hoje = new Date().toISOString().slice(0, 10)
+  if (filters.statusIn?.length) {
+    query = query.in('status', filters.statusIn)
+  } else if (filters.status === 'atrasadas') {
+    query = query
+      .lt('data_entrega', hoje)
+      .neq('status', 'entregue')
+      .neq('status', 'cancelada')
+  } else if (filters.status && filters.status !== 'prazo_hoje') {
     query = query.eq('status', filters.status)
   }
 
-  if (filters.status !== 'cancelada') {
+  if (filters.status !== 'cancelada' && !filters.statusIn?.length) {
     query = query.neq('status', 'cancelada')
   }
 

@@ -29,7 +29,7 @@ export function TicketListPage() {
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState('')
-  const [status, setStatus] = useState<TicketStatus | ''>('')
+  const [status, setStatus] = useState<TicketStatus | 'atrasadas' | ''>('')
   const [prioridade, setPrioridade] = useState<TicketPrioridade | ''>('')
   const [categoria, setCategoria] = useState<TicketCategoria | ''>('')
   const [tipo, setTipo] = useState<TicketTipo | ''>('')
@@ -40,8 +40,8 @@ export function TicketListPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
-    const pStatus = params.get('status') as TicketStatus | null
-    if (pStatus) setStatus(pStatus)
+    const pStatus = params.get('status')
+    if (pStatus) setStatus(pStatus as TicketStatus | '')
   }, [location.search])
 
   const filters = {
@@ -56,7 +56,7 @@ export function TicketListPage() {
 
   const load = async (
     pageOffset?: number,
-    overrides?: Partial<typeof filters>,
+    overrides?: Partial<typeof filters> & { statusIn?: TicketStatus[] },
   ) => {
     const isInitial = pageOffset === undefined || pageOffset === 0
     const mergedFilters = { ...filters, ...overrides }
@@ -70,11 +70,15 @@ export function TicketListPage() {
         mergedFilters,
         { limit: PAGE_SIZE, offset },
       )
-      const semCanceladas = (data ?? []).filter((t) => t.status !== 'cancelada')
+      const list = data ?? []
+      const exibirLista =
+        mergedFilters.status === 'cancelada' || mergedFilters.statusIn
+          ? list
+          : list.filter((t) => t.status !== 'cancelada')
       if (isInitial) {
-        setTickets(semCanceladas)
+        setTickets(exibirLista)
       } else {
-        setTickets((prev) => [...prev, ...semCanceladas])
+        setTickets((prev) => [...prev, ...exibirLista])
       }
       setHasMore(more)
     } catch (err) {
@@ -95,8 +99,17 @@ export function TicketListPage() {
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
-    const statusFromUrl = params.get('status') as TicketStatus | null
-    load(0, statusFromUrl ? { status: statusFromUrl } : undefined)
+    const statusParam = params.get('status')
+    if (!statusParam) {
+      load(0)
+      return
+    }
+    if (statusParam.includes(',')) {
+      const statusIn = statusParam.split(',') as TicketStatus[]
+      load(0, { statusIn })
+    } else {
+      load(0, { status: statusParam as TicketStatus })
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search])
 
@@ -156,7 +169,7 @@ export function TicketListPage() {
           </div>
           <select
             value={status}
-            onChange={(e) => setStatus(e.target.value as TicketStatus | '')}
+            onChange={(e) => setStatus(e.target.value as TicketStatus | 'atrasadas' | '')}
             className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
           >
             <option value="">Todos os status</option>
@@ -168,6 +181,8 @@ export function TicketListPage() {
             <option value="pos_processo">Pós-processo</option>
             <option value="pronta">Pronta</option>
             <option value="entregue">Entregue</option>
+            <option value="cancelada">Cancelada</option>
+            <option value="atrasadas">Atrasadas</option>
           </select>
           <select
             value={tipo}

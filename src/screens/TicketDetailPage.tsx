@@ -53,8 +53,11 @@ export function TicketDetailPage() {
   const { appUser } = useAuth()
   const isFelipe = appUser?.role === 'felipe'
   const isExecutor = appUser?.role === 'executor'
+  const isResponsavelOuColaborador = (t: Ticket) =>
+    t.responsavel_id === appUser?.id || t.colaborador_id === appUser?.id
 
-  const podeEditarDados = isFelipe || isExecutor
+  const podeEditarDados = (t: Ticket) =>
+    isFelipe || (isExecutor && isResponsavelOuColaborador(t))
   const [editingDados, setEditingDados] = useState(false)
   const [savingDados, setSavingDados] = useState(false)
   const [formDados, setFormDados] = useState({
@@ -250,7 +253,7 @@ export function TicketDetailPage() {
 
   const podeAlterarStatus =
     ticket.status !== 'cancelada' &&
-    (isFelipe || isExecutor)
+    (isFelipe || (isExecutor && isResponsavelOuColaborador(ticket)))
 
   return (
     <LayoutShell>
@@ -301,7 +304,7 @@ export function TicketDetailPage() {
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Informações principais
                 </p>
-                {podeEditarDados && !editingDados && (
+                {podeEditarDados(ticket) && !editingDados && (
                   <button
                     type="button"
                     onClick={openEditDados}
@@ -695,30 +698,13 @@ export function TicketDetailPage() {
                         <option value="pos_processo">Pós-processo</option>
                         <option value="pronta">Pronta</option>
                         <option value="entregue">Entregue (finalizado)</option>
-                        <option value="cancelada">Cancelada (excluir)</option>
+                        <option value="cancelada">Cancelada</option>
                       </select>
-                      <div className="flex flex-wrap gap-2 pt-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (
-                              window.confirm(
-                                'Tem certeza que deseja excluir (cancelar) esta demanda?',
-                              )
-                            ) {
-                              handleStatusChange('cancelada')
-                            }
-                          }}
-                          className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-sm font-semibold text-rose-700 hover:bg-rose-100"
-                        >
-                          Excluir demanda
-                        </button>
-                      </div>
                     </div>
                   )}
                   {!podeAlterarStatus && (
                     <p className="text-sm text-slate-500">
-                      Apenas triagem (Felipe) ou executores podem alterar o fluxo.
+                      Apenas triagem (Felipe) ou o responsável pela demanda podem alterar o fluxo.
                     </p>
                   )}
                 </>
