@@ -62,6 +62,7 @@ export interface Ticket {
   status: TicketStatus
   responsavel_id: string | null
   responsavel_nome?: string | null
+  responsavel_avatar_url?: string | null
   colaborador_id?: string | null
   colaborador_nome?: string | null
   data_criacao: string

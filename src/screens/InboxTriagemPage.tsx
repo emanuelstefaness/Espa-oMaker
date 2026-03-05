@@ -45,6 +45,13 @@ export function InboxTriagemPage() {
   const handleAtribuir = async (ticketId: string) => {
     const responsavel = selectedResponsavel[ticketId]
     if (!responsavel) return
+    if (
+      !window.confirm(
+        'Tem certeza que deseja atribuir esta demanda? O status será alterado para "Em análise".',
+      )
+    ) {
+      return
+    }
     try {
       setSavingId(ticketId)
       await updateTicketResponsavel(ticketId, {

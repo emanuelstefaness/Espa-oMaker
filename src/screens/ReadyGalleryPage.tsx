@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { LayoutShell } from '../components/LayoutShell'
 import { TicketStatusPill } from '../components/TicketStatusPill'
+import { UserAvatar } from '../components/UserAvatar'
 import type { Ticket } from '../types/ticket'
 import { listTickets, listTicketFiles } from '../services/tickets'
 import type { TicketFile } from '../services/tickets'
@@ -100,7 +101,16 @@ export function ReadyGalleryPage() {
                   <div className="flex items-center justify-between gap-2">
                     <TicketStatusPill status={item.status} />
                     <span className="text-xs text-slate-500">
-                      {item.responsavel_nome ?? 'Equipe'}
+                      {item.responsavel_nome ? (
+                        <UserAvatar
+                          avatarUrl={item.responsavel_avatar_url}
+                          name={item.responsavel_nome}
+                          size="sm"
+                          showName
+                        />
+                      ) : (
+                        'Equipe'
+                      )}
                     </span>
                   </div>
                 </div>

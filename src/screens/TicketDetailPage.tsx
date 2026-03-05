@@ -23,6 +23,20 @@ import { useAuth } from '../auth/AuthContext'
 import { CATEGORIAS } from '../constants/ticketOptions'
 import { CategorySelect } from '../components/CategorySelect'
 import { MaterialSelect } from '../components/MaterialSelect'
+import { UserAvatar } from '../components/UserAvatar'
+
+const STATUS_LABELS: Record<TicketStatus, string> = {
+  recebida: 'Recebida',
+  em_analise: 'Em análise',
+  orcamento_em_criacao: 'Orçamento em criação',
+  aguardando_aprovacao: 'Aguardando aprovação de orçamento',
+  aprovado: 'Orçamento aprovado',
+  em_producao: 'Em produção',
+  pos_processo: 'Pós-processo',
+  pronta: 'Pronta',
+  entregue: 'Entregue (finalizado)',
+  cancelada: 'Cancelada',
+}
 
 export function TicketDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -258,8 +272,18 @@ export function TicketDetailPage() {
               </span>
             )}
             <TicketStatusPill status={ticket.status} />
-            <span className="rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs text-slate-600">
-              Resp.: {ticket.responsavel_nome ?? '—'}
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs text-slate-600">
+              Resp.:{' '}
+              {ticket.responsavel_nome ? (
+                <UserAvatar
+                  avatarUrl={ticket.responsavel_avatar_url}
+                  name={ticket.responsavel_nome}
+                  size="sm"
+                  showName
+                />
+              ) : (
+                '—'
+              )}
             </span>
           </div>
         </header>
@@ -644,11 +668,18 @@ export function TicketDetailPage() {
                       </label>
                       <select
                         value={ticket.status}
-                        onChange={(e) =>
-                          handleStatusChange(
-                            e.target.value as TicketStatus,
-                          )
-                        }
+                        onChange={(e) => {
+                          const next = e.target.value as TicketStatus
+                          if (next === ticket.status) return
+                          const label = STATUS_LABELS[next]
+                          if (
+                            window.confirm(
+                              `Tem certeza que deseja alterar o status para "${label}"?`,
+                            )
+                          ) {
+                            handleStatusChange(next)
+                          }
+                        }}
                         className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
                       >
                         <option value="recebida">Recebida</option>

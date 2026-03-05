@@ -79,7 +79,7 @@ export async function listTickets(
       sem_cobranca,
       valor_demanda,
       nivel_dificuldade,
-      responsavel:responsavel_id ( id, name )
+      responsavel:responsavel_id ( id, name, avatar_url )
     `,
   )
 
@@ -182,7 +182,7 @@ export async function getTicket(id: string): Promise<Ticket | null> {
         sem_cobranca,
         valor_demanda,
         nivel_dificuldade,
-        responsavel:responsavel_id ( id, name )
+        responsavel:responsavel_id ( id, name, avatar_url )
       `,
     )
     .eq('id', id)
@@ -296,7 +296,7 @@ const TICKET_SELECT_WITH_RESPONSAVEL = `
   sem_cobranca,
   valor_demanda,
   nivel_dificuldade,
-  responsavel:responsavel_id ( id, name )
+  responsavel:responsavel_id ( id, name, avatar_url )
 `
 
 export async function updateTicketStatus(
@@ -374,7 +374,7 @@ export async function updateTicketDados(
     .select(
       `
       *,
-      responsavel:responsavel_id ( id, name )
+      responsavel:responsavel_id ( id, name, avatar_url )
     `,
     )
     .single()
@@ -409,7 +409,7 @@ export async function updateTicketResponsavel(
     .select(
       `
       *,
-      responsavel:responsavel_id ( id, name )
+      responsavel:responsavel_id ( id, name, avatar_url )
     `,
     )
     .single()
@@ -689,6 +689,7 @@ function mapRowToTicket(row: any): Ticket {
     status: row.status,
     responsavel_id: row.responsavel_id ?? null,
     responsavel_nome: row.responsavel?.name ?? null,
+    responsavel_avatar_url: row.responsavel?.avatar_url ?? null,
     colaborador_id: row.colaborador_id ?? null,
     data_criacao: row.data_criacao,
     data_entrega: row.data_entrega ?? null,

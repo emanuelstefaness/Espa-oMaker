@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { LayoutShell } from '../components/LayoutShell'
 import { TicketStatusPill } from '../components/TicketStatusPill'
+import { UserAvatar } from '../components/UserAvatar'
 import type {
   Ticket,
   TicketCategoria,
@@ -235,7 +236,16 @@ export function TicketListPage() {
                         </p>
                       </td>
                       <td className="px-4 py-3 text-slate-700">
-                        {ticket.responsavel_nome ?? '—'}
+                        {ticket.responsavel_nome ? (
+                          <UserAvatar
+                            avatarUrl={ticket.responsavel_avatar_url}
+                            name={ticket.responsavel_nome}
+                            size="sm"
+                            showName
+                          />
+                        ) : (
+                          '—'
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <TicketStatusPill status={ticket.status} />

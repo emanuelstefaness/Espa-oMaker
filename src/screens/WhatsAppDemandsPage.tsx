@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { LayoutShell } from '../components/LayoutShell'
 import { TicketStatusPill } from '../components/TicketStatusPill'
+import { UserAvatar } from '../components/UserAvatar'
 import type { Ticket } from '../types/ticket'
 import { listTickets } from '../services/tickets'
 
@@ -129,7 +130,16 @@ export function WhatsAppDemandsPage() {
                         <TicketStatusPill status={t.status} />
                       </td>
                       <td className="px-4 py-3 text-slate-600">
-                        {t.responsavel_nome ?? '—'}
+                        {t.responsavel_nome ? (
+                          <UserAvatar
+                            avatarUrl={t.responsavel_avatar_url}
+                            name={t.responsavel_nome}
+                            size="sm"
+                            showName
+                          />
+                        ) : (
+                          '—'
+                        )}
                       </td>
                       <td className="px-4 py-3 text-slate-600">
                         {formatPrazo(t.data_entrega)}

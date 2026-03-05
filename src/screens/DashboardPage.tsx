@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { LayoutShell } from '../components/LayoutShell'
 import { TicketStatusPill } from '../components/TicketStatusPill'
+import { UserAvatar } from '../components/UserAvatar'
 import type { Ticket } from '../types/ticket'
 import { listTickets } from '../services/tickets'
 import { supabase } from '../lib/supabaseClient'
@@ -204,10 +205,18 @@ export function DashboardPage() {
                         >
                           {ticket.titulo}
                         </Link>
-                        <p className="mt-1 text-xs text-slate-500 line-clamp-1">
-                          {ticket.solicitante_nome}
+                        <p className="mt-1 flex items-center gap-2 text-xs text-slate-500">
+                          <span className="line-clamp-1">{ticket.solicitante_nome}</span>
                           {ticket.responsavel_nome && (
-                            <> · {ticket.responsavel_nome}</>
+                            <>
+                              <span>·</span>
+                              <UserAvatar
+                                avatarUrl={ticket.responsavel_avatar_url}
+                                name={ticket.responsavel_nome}
+                                size="sm"
+                                showName
+                              />
+                            </>
                           )}
                         </p>
                         <div className="mt-2 flex flex-wrap gap-1.5">
@@ -239,10 +248,18 @@ export function DashboardPage() {
                         >
                           {ticket.titulo}
                         </Link>
-                        <p className="mt-0.5 text-xs text-slate-500">
-                          {ticket.solicitante_nome}
+                        <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                          <span>{ticket.solicitante_nome}</span>
                           {ticket.responsavel_nome && (
-                            <> · Resp.: {ticket.responsavel_nome}</>
+                            <>
+                              <span>·</span>
+                              <UserAvatar
+                                avatarUrl={ticket.responsavel_avatar_url}
+                                name={ticket.responsavel_nome}
+                                size="sm"
+                                showName
+                              />
+                            </>
                           )}
                         </p>
                         <div className="mt-2 flex flex-wrap gap-2">
