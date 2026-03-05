@@ -135,6 +135,18 @@ with check (
   )
 );
 
+-- -----------------------------------------------------------------------------
+-- 7. EXECUTORES: poder ver responsável e avatar nas demandas
+-- -----------------------------------------------------------------------------
+-- Sem esta política, o join responsavel:responsavel_id ( name, avatar_url )
+-- vinha null para executores e eles não viam a quem está atribuído.
+drop policy if exists "app_users_select_executor" on public.app_users;
+
+create policy "app_users_select_executor"
+on public.app_users
+for select
+using (public.current_app_role() = 'executor');
+
 -- =============================================================================
 -- FIM. Após executar, ative Realtime na tabela tickets se quiser dashboard
 -- em tempo real: Database → Replication → marque a tabela public.tickets.

@@ -81,9 +81,9 @@ export function DashboardPage() {
         t.status === 'em_analise'),
   )
 
-  const useCarousel = filaAtiva.length > 4
+  const useCarousel = filaAtiva.length > 9
   const [carouselPage, setCarouselPage] = useState(0)
-  const PAGE_SIZE = 6
+  const PAGE_SIZE = 9
   const totalPages = Math.ceil(filaAtiva.length / PAGE_SIZE) || 1
   const filaAtivaPage = filaAtiva.slice(
     carouselPage * PAGE_SIZE,
@@ -102,7 +102,7 @@ export function DashboardPage() {
     if (!useCarousel || totalPages <= 1) return
     const interval = setInterval(() => {
       setCarouselPage((p) => (p >= totalPages - 1 ? 0 : p + 1))
-    }, 3000)
+    }, 10000)
     return () => clearInterval(interval)
   }, [useCarousel, totalPages])
 
@@ -191,7 +191,7 @@ export function DashboardPage() {
                       </svg>
                     </button>
                     <span className="text-xs text-slate-500">
-                      {filaAtiva.length} demandas — grade 3×2 — página {carouselPage + 1}/{totalPages}
+                      {filaAtiva.length} demandas — grade 3×3 — página {carouselPage + 1}/{totalPages}
                     </span>
                     <button
                       type="button"
