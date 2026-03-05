@@ -16,8 +16,12 @@ export interface TicketFilters {
   categoria?: TicketCategoria
   tipo?: TicketTipo
   origem?: TicketOrigem
+  /** Filtro por data de entrega (prazo) */
   dataInicial?: string
   dataFinal?: string
+  /** Filtro por data de criação (para relatórios por período) */
+  dataCriacaoInicial?: string
+  dataCriacaoFinal?: string
 }
 
 export interface ListTicketsOptions {
@@ -112,6 +116,13 @@ export async function listTickets(
   }
   if (filters.dataFinal) {
     query = query.lte('data_entrega', filters.dataFinal)
+  }
+
+  if (filters.dataCriacaoInicial) {
+    query = query.gte('data_criacao', filters.dataCriacaoInicial)
+  }
+  if (filters.dataCriacaoFinal) {
+    query = query.lte('data_criacao', filters.dataCriacaoFinal)
   }
 
   if (filters.search) {

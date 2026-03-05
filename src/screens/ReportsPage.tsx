@@ -65,28 +65,45 @@ export function ReportsPage() {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [dataInicio, setDataInicio] = useState('')
+  const [dataFim, setDataFim] = useState('')
   const printRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const { tickets: list } = await listTickets({}, { limit: 5000 })
-        setTickets(list)
-        const reports = buildReports(list)
-        setData(reports)
-      } catch (err) {
-        const message =
-          err instanceof Error ? err.message : 'Erro ao carregar relatórios.'
-        setError(message)
-      } finally {
-        setLoading(false)
-      }
+  const load = async (override?: { dataInicio?: string; dataFim?: string }) => {
+    const inicio = override?.dataInicio ?? dataInicio
+    const fim = override?.dataFim ?? dataFim
+    try {
+      setLoading(true)
+      setError(null)
+      const filters: Parameters<typeof listTickets>[0] = {}
+      if (inicio) filters.dataCriacaoInicial = inicio
+      if (fim) filters.dataCriacaoFinal = fim
+      const { tickets: list } = await listTickets(filters, { limit: 5000 })
+      setTickets(list)
+      const reports = buildReports(list)
+      setData(reports)
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Erro ao carregar relatórios.'
+      setError(message)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     void load()
   }, [])
+
+  const handleFiltrar = () => {
+    void load()
+  }
+
+  const handleLimparFiltro = () => {
+    setDataInicio('')
+    setDataFim('')
+    void load({ dataInicio: '', dataFim: '' })
+  }
 
   const handleExportPDF = () => {
     if (!printRef.current) return
@@ -213,6 +230,45 @@ export function ReportsPage() {
                 </button>
               </div>
             </div>
+
+            <div className="mt-4 flex flex-wrap items-end gap-3 rounded-lg border border-slate-100 bg-slate-50/50 p-3">
+              <span className="text-sm font-medium text-slate-700">
+                Período (data de criação):
+              </span>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-slate-500">De</span>
+                <input
+                  type="date"
+                  value={dataInicio}
+                  onChange={(e) => setDataInicio(e.target.value)}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800"
+                />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-xs text-slate-500">Até</span>
+                <input
+                  type="date"
+                  value={dataFim}
+                  onChange={(e) => setDataFim(e.target.value)}
+                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800"
+                />
+              </label>
+              <button
+                type="button"
+                onClick={handleFiltrar}
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Filtrar
+              </button>
+              <button
+                type="button"
+                onClick={handleLimparFiltro}
+                className="text-sm text-slate-500 hover:text-slate-700"
+              >
+                Limpar período
+              </button>
+            </div>
+
             <div className="mt-4 overflow-x-auto">
               <table className="min-w-full border-collapse border border-slate-200 text-left text-sm">
                 <thead>

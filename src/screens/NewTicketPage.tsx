@@ -9,6 +9,7 @@ import type {
 } from '../types/ticket'
 import { createTicket, uploadTicketFile } from '../services/tickets'
 import { CATEGORIAS, MATERIAIS_IMPRESSAO } from '../constants/ticketOptions'
+import { CategorySelect } from '../components/CategorySelect'
 
 type AnexoKind = 'foto' | 'arquivo'
 
@@ -189,24 +190,11 @@ export function NewTicketPage() {
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
               <label className={labelClass}>Categoria</label>
-              <select
+              <CategorySelect
                 value={categoria}
-                onChange={(e) =>
-                  setCategoria(e.target.value as TicketCategoria)
-                }
+                onChange={setCategoria}
                 className={inputClass}
-              >
-                {CATEGORIAS.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-              {CATEGORIAS.find((c) => c.value === categoria)?.descricao && (
-                <p className="mt-1 text-xs text-slate-500">
-                  {CATEGORIAS.find((c) => c.value === categoria)?.descricao}
-                </p>
-              )}
+              />
             </div>
             <div>
               <label className={labelClass}>Prioridade</label>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { LayoutShell } from '../components/LayoutShell'
 import { TicketStatusPill } from '../components/TicketStatusPill'
@@ -78,7 +78,17 @@ export function DashboardPage() {
         t.status === 'em_producao' ||
         t.status === 'pos_processo' ||
         t.status === 'em_analise'),
-  ).slice(0, 8)
+  )
+
+  const useCarousel = filaAtiva.length > 4
+  const carouselRef = useRef<HTMLDivElement>(null)
+
+  const scrollCarousel = (dir: 'prev' | 'next') => {
+    const el = carouselRef.current
+    if (!el) return
+    const cardWidth = 300
+    el.scrollBy({ left: dir === 'prev' ? -cardWidth : cardWidth, behavior: 'smooth' })
+  }
 
   return (
     <LayoutShell>
@@ -151,6 +161,70 @@ export function DashboardPage() {
                 <div className="px-4 py-8 text-center text-sm text-slate-500">
                   Carregando...
                 </div>
+              ) : useCarousel ? (
+                <>
+                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-2 py-1">
+                    <button
+                      type="button"
+                      onClick={() => scrollCarousel('prev')}
+                      className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                      aria-label="Anterior"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                    <span className="text-xs text-slate-500">
+                      {filaAtiva.length} demandas — deslize ou use as setas
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => scrollCarousel('next')}
+                      className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                      aria-label="Próximo"
+                    >
+                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                  <div
+                    ref={carouselRef}
+                    className="flex gap-0 overflow-x-auto py-3 px-2 scroll-smooth"
+                    style={{ scrollSnapType: 'x mandatory', scrollbarWidth: 'thin' }}
+                  >
+                    {filaAtiva.map((ticket) => (
+                      <div
+                        key={ticket.id}
+                        className="min-w-[280px] max-w-[280px] flex-shrink-0 snap-start rounded-lg border border-slate-100 bg-slate-50/50 px-4 py-3 transition-colors hover:bg-slate-100"
+                      >
+                        <Link
+                          to={`/demandas/${ticket.id}`}
+                          className="font-medium text-slate-800 hover:text-blue-600 line-clamp-2"
+                        >
+                          {ticket.titulo}
+                        </Link>
+                        <p className="mt-1 text-xs text-slate-500 line-clamp-1">
+                          {ticket.solicitante_nome}
+                          {ticket.responsavel_nome && (
+                            <> · {ticket.responsavel_nome}</>
+                          )}
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          <TicketStatusPill status={ticket.status} />
+                          {ticket.prioridade === 'urgente' && (
+                            <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">
+                              Urgente
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-2 text-xs text-slate-400">
+                          Prazo: {ticket.data_entrega ?? '—'}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </>
               ) : (
                 <ul className="divide-y divide-slate-100">
                   {filaAtiva.map((ticket) => (

@@ -21,6 +21,7 @@ import {
 import type { TicketComment, TicketFile } from '../services/tickets'
 import { useAuth } from '../auth/AuthContext'
 import { CATEGORIAS, MATERIAIS_IMPRESSAO } from '../constants/ticketOptions'
+import { CategorySelect } from '../components/CategorySelect'
 
 export function TicketDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -366,32 +367,13 @@ export function TicketDetailPage() {
                       <label className="mb-1 block text-xs font-medium text-slate-600">
                         Categoria
                       </label>
-                      <select
+                      <CategorySelect
                         value={formDados.categoria}
-                        onChange={(e) =>
-                          setFormDados((p) => ({
-                            ...p,
-                            categoria: e.target.value as TicketCategoria,
-                          }))
+                        onChange={(categoria) =>
+                          setFormDados((p) => ({ ...p, categoria }))
                         }
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                      >
-                        {CATEGORIAS.map((c) => (
-                          <option key={c.value} value={c.value}>
-                            {c.label}
-                          </option>
-                        ))}
-                      </select>
-                      {CATEGORIAS.find((c) => c.value === formDados.categoria)
-                        ?.descricao && (
-                        <p className="mt-1 text-xs text-slate-500">
-                          {
-                            CATEGORIAS.find(
-                              (c) => c.value === formDados.categoria,
-                            )?.descricao
-                          }
-                        </p>
-                      )}
+                        className="w-full"
+                      />
                     </div>
                     <div>
                       <label className="mb-1 block text-xs font-medium text-slate-600">
