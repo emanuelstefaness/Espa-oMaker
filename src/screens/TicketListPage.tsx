@@ -13,6 +13,7 @@ import type {
 } from '../types/ticket'
 import { listTickets } from '../services/tickets'
 import { useAuth } from '../auth/AuthContext'
+import { getTicketCardClasses } from '../constants/ticketOptions'
 
 const PAGE_SIZE = 80
 
@@ -37,6 +38,7 @@ export function TicketListPage() {
   const [dataFinal, setDataFinal] = useState('')
   const location = useLocation()
   const { appUser } = useAuth()
+  const isMinhasDemandas = location.pathname === '/demandas/minhas'
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
@@ -56,10 +58,19 @@ export function TicketListPage() {
 
   const load = async (
     pageOffset?: number,
-    overrides?: Partial<typeof filters> & { statusIn?: TicketStatus[] },
+    overrides?: Partial<typeof filters> & {
+      statusIn?: TicketStatus[]
+      responsavelOuColaboradorId?: string
+    },
   ) => {
     const isInitial = pageOffset === undefined || pageOffset === 0
-    const mergedFilters = { ...filters, ...overrides }
+    const mergedFilters = {
+      ...filters,
+      ...overrides,
+      ...(isMinhasDemandas && appUser?.id
+        ? { responsavelOuColaboradorId: appUser.id }
+        : {}),
+    }
     try {
       if (isInitial) {
         setLoading(true)
@@ -98,6 +109,10 @@ export function TicketListPage() {
   }
 
   useEffect(() => {
+    if (isMinhasDemandas) {
+      load(0)
+      return
+    }
     const params = new URLSearchParams(location.search)
     const statusParam = params.get('status')
     if (!statusParam) {
@@ -111,7 +126,7 @@ export function TicketListPage() {
       load(0, { status: statusParam as TicketStatus })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.search])
+  }, [location.search, location.pathname, isMinhasDemandas, appUser?.id])
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault()
@@ -140,18 +155,30 @@ export function TicketListPage() {
         <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-slate-800">
-              Todas as demandas
+              {isMinhasDemandas ? 'Minhas demandas' : 'Todas as demandas'}
             </h1>
             <p className="mt-1 text-sm text-slate-500">
-              Lista com demandas, prazos e responsáveis.
+              {isMinhasDemandas
+                ? 'Demandas em que você é responsável ou colaborador.'
+                : 'Lista com demandas, prazos e responsáveis.'}
             </p>
           </div>
-          <Link
-            to="/demandas/nova"
-            className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600"
-          >
-            + Nova demanda
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            {isMinhasDemandas && (
+              <Link
+                to="/demandas"
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Ver todas as demandas
+              </Link>
+            )}
+            <Link
+              to="/demandas/nova"
+              className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600"
+            >
+              + Nova demanda
+            </Link>
+          </div>
         </header>
 
         <form
@@ -237,7 +264,7 @@ export function TicketListPage() {
                   tickets.map((ticket) => (
                     <tr
                       key={ticket.id}
-                      className="transition-colors hover:bg-slate-50"
+                      className={`transition-colors ${getTicketCardClasses(ticket.categoria, ticket.prioridade)}`}
                     >
                       <td className="px-4 py-3">
                         <Link
@@ -301,7 +328,7 @@ export function TicketListPage() {
           )}
         </div>
 
-        {minhas.length > 0 && (
+        {!isMinhasDemandas && minhas.length > 0 && (
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <h2 className="text-sm font-semibold text-slate-700">
               Minhas demandas
@@ -325,6 +352,12 @@ export function TicketListPage() {
                 </li>
               ))}
             </ul>
+            <Link
+              to="/demandas/minhas"
+              className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
+            >
+              Ver todas as minhas →
+            </Link>
           </div>
         )}
       </section>

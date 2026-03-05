@@ -5,6 +5,7 @@ import { TicketStatusPill } from '../components/TicketStatusPill'
 import { UserAvatar } from '../components/UserAvatar'
 import type { Ticket } from '../types/ticket'
 import { listTickets } from '../services/tickets'
+import { getTicketCardClasses } from '../constants/ticketOptions'
 
 const POLL_INTERVAL_MS = 15 * 60 * 1000 // 15 minutos
 
@@ -124,7 +125,7 @@ export function DashboardPage() {
             className="border-slate-200 bg-white text-slate-700"
           />
           <SummaryCard
-            to="/demandas?status=aguardando_aprovacao,aprovado"
+            to="/demandas?status=aguardando_aprovacao"
             label="Aguardando aprovação"
             value={aguardando}
             className="border-amber-200 bg-amber-50 text-amber-800"
@@ -212,7 +213,7 @@ export function DashboardPage() {
                     {filaAtivaPage.map((ticket) => (
                       <div
                         key={ticket.id}
-                        className="rounded-lg border border-slate-100 bg-slate-50/50 px-3 py-2 transition-colors hover:bg-slate-100 flex flex-col min-h-0"
+                        className={`rounded-lg border px-3 py-2 transition-colors flex flex-col min-h-0 ${getTicketCardClasses(ticket.categoria, ticket.prioridade)}`}
                       >
                         <Link
                           to={`/demandas/${ticket.id}`}
@@ -254,7 +255,7 @@ export function DashboardPage() {
                   {filaAtiva.map((ticket) => (
                     <li
                       key={ticket.id}
-                      className="flex items-center justify-between gap-3 px-4 py-3 transition-colors hover:bg-slate-50"
+                      className={`flex items-center justify-between gap-3 rounded-lg border px-4 py-3 transition-colors ${getTicketCardClasses(ticket.categoria, ticket.prioridade)}`}
                     >
                       <div className="min-w-0 flex-1">
                         <Link

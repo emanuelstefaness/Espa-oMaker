@@ -26,6 +26,8 @@ export interface TicketFilters {
   dataCriacaoFinal?: string
   /** Incluir demandas canceladas no resultado (ex.: dashboard para contar no card) */
   includeCancelada?: boolean
+  /** Demandas em que o usuário é responsável OU colaborador (minhas demandas) */
+  responsavelOuColaboradorId?: string
 }
 
 export interface ListTicketsOptions {
@@ -110,7 +112,11 @@ export async function listTickets(
     query = query.neq('status', 'cancelada')
   }
 
-  if (filters.responsavelId) {
+  if (filters.responsavelOuColaboradorId) {
+    query = query.or(
+      `responsavel_id.eq.${filters.responsavelOuColaboradorId},colaborador_id.eq.${filters.responsavelOuColaboradorId}`,
+    )
+  } else if (filters.responsavelId) {
     query = query.eq('responsavel_id', filters.responsavelId)
   }
 

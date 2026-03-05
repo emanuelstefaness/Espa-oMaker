@@ -1,3 +1,26 @@
+import type { TicketCategoria } from '../types/ticket'
+
+/** Classes Tailwind para card/linha por categoria (cor clarinha). Urgente usa vermelho forte. */
+export function getTicketCardClasses(
+  categoria: TicketCategoria,
+  prioridade?: string,
+): string {
+  if (prioridade === 'urgente') {
+    return 'border-rose-200 bg-rose-100/90 hover:bg-rose-100'
+  }
+  const map: Record<TicketCategoria, string> = {
+    servicos_3d: 'border-violet-200/80 bg-violet-50/70 hover:bg-violet-50',
+    reparos: 'border-amber-200/80 bg-amber-50/70 hover:bg-amber-50',
+    engenharia: 'border-blue-200/80 bg-blue-50/70 hover:bg-blue-50',
+    workshop: 'border-emerald-200/80 bg-emerald-50/70 hover:bg-emerald-50',
+    sublimacao: 'border-pink-200/80 bg-pink-50/70 hover:bg-pink-50',
+    saude: 'border-teal-200/80 bg-teal-50/70 hover:bg-teal-50',
+    servicos_gerais: 'border-slate-200 bg-slate-50/80 hover:bg-slate-100',
+    outros: 'border-slate-200 bg-slate-50/60 hover:bg-slate-100',
+  }
+  return map[categoria] ?? 'border-slate-200 bg-slate-50/60 hover:bg-slate-100'
+}
+
 /** Categorias de demanda com rótulo e descrição (Solicitar + App). */
 export const CATEGORIAS = [
   {

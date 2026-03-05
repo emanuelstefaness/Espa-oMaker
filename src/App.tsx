@@ -44,6 +44,14 @@ function App() {
           />
 
           <Route
+            path="/demandas/minhas"
+            element={
+              <ProtectedRoute>
+                <TicketListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/demandas"
             element={
               <ProtectedRoute>

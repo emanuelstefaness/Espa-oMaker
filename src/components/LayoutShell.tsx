@@ -66,6 +66,18 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
             Todas as demandas
           </NavLink>
           <NavLink
+            to="/demandas/minhas"
+            className={({ isActive }) =>
+              `rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              }`
+            }
+          >
+            Minhas demandas
+          </NavLink>
+          <NavLink
             to="/demandas/nova"
             className={({ isActive }) =>
               `rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
