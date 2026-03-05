@@ -20,8 +20,9 @@ import {
 } from '../services/tickets'
 import type { TicketComment, TicketFile } from '../services/tickets'
 import { useAuth } from '../auth/AuthContext'
-import { CATEGORIAS, MATERIAIS_IMPRESSAO } from '../constants/ticketOptions'
+import { CATEGORIAS } from '../constants/ticketOptions'
 import { CategorySelect } from '../components/CategorySelect'
+import { MaterialSelect } from '../components/MaterialSelect'
 
 export function TicketDetailPage() {
   const { id } = useParams<{ id: string }>()
@@ -433,34 +434,15 @@ export function TicketDetailPage() {
                         <label className="mb-1 block text-xs font-medium text-slate-600">
                           Material
                         </label>
-                        <select
-                          value={formDados.material_impressao}
-                          onChange={(e) =>
-                            setFormDados((p) => ({
-                              ...p,
-                              material_impressao: e.target.value,
-                            }))
+                        <MaterialSelect
+                          value={formDados.material_impressao ?? ''}
+                          onChange={(material_impressao) =>
+                            setFormDados((p) => ({ ...p, material_impressao }))
                           }
-                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                        >
-                          <option value="">—</option>
-                          {MATERIAIS_IMPRESSAO.map((m) => (
-                            <option key={m.value} value={m.value}>
-                              {m.label}
-                            </option>
-                          ))}
-                        </select>
-                        {MATERIAIS_IMPRESSAO.find(
-                          (m) => m.value === formDados.material_impressao,
-                        )?.descricao && (
-                          <p className="mt-1 text-xs text-slate-500">
-                            {
-                              MATERIAIS_IMPRESSAO.find(
-                                (m) => m.value === formDados.material_impressao,
-                              )?.descricao
-                            }
-                          </p>
-                        )}
+                          className="w-full"
+                          placeholder="—"
+                          allowEmpty
+                        />
                       </div>
                     <div>
                       <label className="mb-1 block text-xs font-medium text-slate-600">

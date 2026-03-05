@@ -3,8 +3,8 @@ import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import type { TicketCategoria } from '../types/ticket'
 import { createTicket, uploadTicketFilePublic } from '../services/tickets'
-import { MATERIAIS_IMPRESSAO } from '../constants/ticketOptions'
 import { CategorySelect } from '../components/CategorySelect'
+import { MaterialSelect } from '../components/MaterialSelect'
 
 const MAX_IMAGENS = 5
 
@@ -199,26 +199,11 @@ export function SolicitarPage() {
               <div className="grid gap-4 sm:grid-cols-3">
                 <div>
                   <label className={labelClass}>Material (opcional)</label>
-                  <select
+                  <MaterialSelect
                     value={material}
-                    onChange={(e) => setMaterial(e.target.value)}
+                    onChange={setMaterial}
                     className={inputClass}
-                  >
-                    {MATERIAIS_IMPRESSAO.map((m) => (
-                      <option key={m.value} value={m.value}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </select>
-                  {MATERIAIS_IMPRESSAO.find((m) => m.value === material)
-                    ?.descricao && (
-                    <p className="mt-1 text-xs text-slate-500">
-                      {
-                        MATERIAIS_IMPRESSAO.find((m) => m.value === material)
-                          ?.descricao
-                      }
-                    </p>
-                  )}
+                  />
                 </div>
                 <div>
                   <label className={labelClass}>Cor (opcional)</label>

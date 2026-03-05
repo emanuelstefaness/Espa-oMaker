@@ -8,8 +8,8 @@ import type {
   TicketTipo,
 } from '../types/ticket'
 import { createTicket, uploadTicketFile } from '../services/tickets'
-import { MATERIAIS_IMPRESSAO } from '../constants/ticketOptions'
 import { CategorySelect } from '../components/CategorySelect'
+import { MaterialSelect } from '../components/MaterialSelect'
 
 type AnexoKind = 'foto' | 'arquivo'
 
@@ -230,26 +230,11 @@ export function NewTicketPage() {
               <div className="grid gap-4 sm:grid-cols-3">
                 <div>
                   <label className={labelClass}>Material</label>
-                  <select
+                  <MaterialSelect
                     value={material}
-                    onChange={(e) => setMaterial(e.target.value)}
+                    onChange={setMaterial}
                     className={inputClass}
-                  >
-                    {MATERIAIS_IMPRESSAO.map((m) => (
-                      <option key={m.value} value={m.value}>
-                        {m.label}
-                      </option>
-                    ))}
-                  </select>
-                  {MATERIAIS_IMPRESSAO.find((m) => m.value === material)
-                    ?.descricao && (
-                    <p className="mt-1 text-xs text-slate-500">
-                      {
-                        MATERIAIS_IMPRESSAO.find((m) => m.value === material)
-                          ?.descricao
-                      }
-                    </p>
-                  )}
+                  />
                 </div>
                 <div>
                   <label className={labelClass}>Cor</label>
