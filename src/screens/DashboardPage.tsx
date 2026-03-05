@@ -192,8 +192,7 @@ export function DashboardPage() {
                       </svg>
                     </button>
                     <span className="text-xs text-slate-500">
-                      {filaAtiva.length} demandas — grade 3×3 — página {carouselPage + 1}/{totalPages}
-                      {temMultiplasPaginas && ' — rolagem a cada 10 s'}
+                      Página {carouselPage + 1}/{totalPages}
                     </span>
                     <button
                       type="button"
