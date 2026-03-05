@@ -147,6 +147,15 @@ on public.app_users
 for select
 using (public.current_app_role() = 'executor');
 
+-- -----------------------------------------------------------------------------
+-- 8. TICKETS: exclusão (soft delete)
+-- -----------------------------------------------------------------------------
+-- Demandas "excluídas" somem das listas mas continuam no banco (só leitura na página).
+alter table public.tickets
+add column if not exists excluida_em timestamptz;
+
+comment on column public.tickets.excluida_em is 'Quando preenchido, a demanda foi excluída e não aparece nas listas.';
+
 -- =============================================================================
 -- FIM. Após executar, ative Realtime na tabela tickets se quiser dashboard
 -- em tempo real: Database → Replication → marque a tabela public.tickets.

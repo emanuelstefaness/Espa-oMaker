@@ -72,5 +72,7 @@ export interface Ticket {
   nivel_dificuldade?: NivelDificuldade | null
   impressao3d?: TicketImpressao3D | null
   orcamento?: TicketOrcamento | null
+  /** Preenchido quando a demanda foi excluída (não aparece mais nas listas, só leitura na página) */
+  excluida_em?: string | null
 }
 

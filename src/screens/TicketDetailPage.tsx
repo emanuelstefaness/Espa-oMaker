@@ -17,6 +17,7 @@ import {
   updateTicketDados,
   uploadTicketFile,
   getTicket,
+  setTicketExcluida,
 } from '../services/tickets'
 import type { TicketComment, TicketFile } from '../services/tickets'
 import { useAuth } from '../auth/AuthContext'
@@ -57,7 +58,7 @@ export function TicketDetailPage() {
     t.responsavel_id === appUser?.id || t.colaborador_id === appUser?.id
 
   const podeEditarDados = (t: Ticket) =>
-    isFelipe || (isExecutor && isResponsavelOuColaborador(t))
+    !t.excluida_em && (isFelipe || (isExecutor && isResponsavelOuColaborador(t)))
   const [editingDados, setEditingDados] = useState(false)
   const [savingDados, setSavingDados] = useState(false)
   const [formDados, setFormDados] = useState({
@@ -660,8 +661,8 @@ export function TicketDetailPage() {
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Workflow
               </p>
-              {ticket.status === 'cancelada' ? (
-                <p className="text-sm text-slate-500">Esta demanda foi cancelada.</p>
+              {ticket.excluida_em ? (
+                <p className="text-sm text-slate-500">Esta demanda foi excluída e não pode mais ser alterada.</p>
               ) : (
                 <>
                   {podeAlterarStatus && (
@@ -711,33 +712,56 @@ export function TicketDetailPage() {
               )}
             </div>
 
+            {!ticket.excluida_em && podeAlterarStatus && (
+              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!window.confirm('Tem certeza que deseja excluir esta demanda? Ela não aparecerá mais nas listas e não poderá ser alterada.')) return
+                    try {
+                      await setTicketExcluida(ticket.id)
+                      setTicket((t) => (t ? { ...t, excluida_em: new Date().toISOString() } : null))
+                    } catch (err) {
+                      const msg = err instanceof Error ? err.message : 'Erro ao excluir.'
+                      window.alert(msg)
+                    }
+                  }}
+                  className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100"
+                >
+                  Excluir demanda
+                </button>
+              </div>
+            )}
+
             <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Anexos
               </p>
-              <div className="flex flex-wrap gap-2">
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                  + Foto
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={(e) => handleUploadChange(e, 'foto')}
-                  />
-                </label>
-                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
-                  + Arquivo
-                  <input
-                    type="file"
-                    accept=".stl,.obj,.3mf,.pdf,image/*"
-                    className="hidden"
-                    onChange={(e) => handleUploadChange(e, 'arquivo')}
-                  />
-                </label>
-                {uploading && (
-                  <span className="text-sm text-slate-500">Enviando...</span>
-                )}
-              </div>
+              {!ticket.excluida_em && (
+                <div className="flex flex-wrap gap-2">
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    + Foto
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleUploadChange(e, 'foto')}
+                    />
+                  </label>
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                    + Arquivo
+                    <input
+                      type="file"
+                      accept=".stl,.obj,.3mf,.pdf,image/*"
+                      className="hidden"
+                      onChange={(e) => handleUploadChange(e, 'arquivo')}
+                    />
+                  </label>
+                  {uploading && (
+                    <span className="text-sm text-slate-500">Enviando...</span>
+                  )}
+                </div>
+              )}
               <div className="mt-3 space-y-2">
                 {files.map((f) => (
                   <div

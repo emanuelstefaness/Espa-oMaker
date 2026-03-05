@@ -81,9 +81,12 @@ export async function listTickets(
       sem_cobranca,
       valor_demanda,
       nivel_dificuldade,
+      excluida_em,
       responsavel:responsavel_id ( id, name, avatar_url )
     `,
   )
+
+  query = query.is('excluida_em', null)
 
   const hoje = new Date().toISOString().slice(0, 10)
   if (filters.statusIn?.length) {
@@ -192,6 +195,7 @@ export async function getTicket(id: string): Promise<Ticket | null> {
         sem_cobranca,
         valor_demanda,
         nivel_dificuldade,
+        excluida_em,
         responsavel:responsavel_id ( id, name, avatar_url )
       `,
     )
@@ -204,6 +208,16 @@ export async function getTicket(id: string): Promise<Ticket | null> {
   }
 
   return mapRowToTicket(data)
+}
+
+/** Marca a demanda como excluída (some das listas; na página fica só leitura). */
+export async function setTicketExcluida(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('tickets')
+    .update({ excluida_em: new Date().toISOString() })
+    .eq('id', id)
+
+  if (error) throw error
 }
 
 export interface CreateTicketInput {
@@ -306,6 +320,7 @@ const TICKET_SELECT_WITH_RESPONSAVEL = `
   sem_cobranca,
   valor_demanda,
   nivel_dificuldade,
+  excluida_em,
   responsavel:responsavel_id ( id, name, avatar_url )
 `
 
@@ -711,6 +726,7 @@ function mapRowToTicket(row: any): Ticket {
     nivel_dificuldade: row.nivel_dificuldade ?? null,
     impressao3d,
     orcamento: orcamento ?? null,
+    excluida_em: row.excluida_em ?? null,
   }
 }
 

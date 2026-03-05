@@ -308,7 +308,7 @@ export function DashboardPage() {
                 description="Prazo de entrega vencido."
                 value={atrasadas}
                 tone="critical"
-                to="/demandas"
+                to="/demandas?status=atrasadas"
               />
               <AlertCard
                 title="Aguardando aprovação"
