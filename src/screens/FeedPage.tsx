@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { LayoutShell } from '../components/LayoutShell'
@@ -55,6 +55,7 @@ export function FeedPage() {
   const [editTicketId, setEditTicketId] = useState('')
   const [savingEdit, setSavingEdit] = useState(false)
   const [deletingPostId, setDeletingPostId] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const loadPosts = () => {
     setLoading(true)
@@ -83,6 +84,10 @@ export function FeedPage() {
     loadPosts()
     listTicketsForFeed().then(setTicketOptions).catch(() => setTicketOptions([]))
   }, [])
+
+  useEffect(() => {
+    if (showNewPostModal && fileInputRef.current) fileInputRef.current.value = ''
+  }, [showNewPostModal])
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
@@ -125,10 +130,12 @@ export function FeedPage() {
   }
 
   const addFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const chosen = e.target.files
+    const input = e.target
+    const chosen = input?.files
     if (!chosen?.length) return
-    setFiles((prev) => [...prev, ...Array.from(chosen)])
-    e.target.value = ''
+    const list = Array.from(chosen)
+    setFiles((prev) => [...prev, ...list])
+    if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const removeFile = (index: number) => {
@@ -241,6 +248,7 @@ export function FeedPage() {
             <div
               className="relative w-full max-w-md rounded-xl border border-slate-200 bg-white p-4 shadow-xl"
               onClick={(e) => e.stopPropagation()}
+              onMouseDown={(e) => e.stopPropagation()}
             >
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h2 id="modal-title" className="text-sm font-semibold text-slate-800">
@@ -301,8 +309,8 @@ export function FeedPage() {
                     Anexar arquivos
                   </label>
                   <input
+                    ref={fileInputRef}
                     id="new-post-files"
-                    key="new-post-file-input"
                     type="file"
                     multiple
                     accept="image/*,.pdf,.doc,.docx,.stl,.3mf"
