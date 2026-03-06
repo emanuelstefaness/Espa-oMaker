@@ -238,7 +238,10 @@ export function FeedPage() {
               onClick={closeModal}
               aria-hidden="true"
             />
-            <div className="relative w-full max-w-md rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+            <div
+              className="relative w-full max-w-md rounded-xl border border-slate-200 bg-white p-4 shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h2 id="modal-title" className="text-sm font-semibold text-slate-800">
                   Novo post
@@ -294,16 +297,19 @@ export function FeedPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500">
+                  <label htmlFor="new-post-files" className="block text-xs font-medium text-slate-500">
                     Anexar arquivos
                   </label>
                   <input
+                    id="new-post-files"
+                    key="new-post-file-input"
                     type="file"
                     multiple
+                    accept="image/*,.pdf,.doc,.docx,.stl,.3mf"
                     onChange={addFiles}
                     className="mt-0.5 block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-slate-700"
                   />
-                  {files.length > 0 && (
+                  {files.length > 0 ? (
                     <ul className="mt-1 flex flex-wrap gap-2">
                       {files.map((f, i) => (
                         <li
@@ -322,6 +328,8 @@ export function FeedPage() {
                         </li>
                       ))}
                     </ul>
+                  ) : (
+                    <p className="mt-0.5 text-xs text-slate-400">Nenhum ficheiro selecionado</p>
                   )}
                 </div>
                 <div className="flex gap-2 pt-1">
