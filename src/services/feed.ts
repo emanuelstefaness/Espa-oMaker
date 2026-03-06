@@ -135,21 +135,20 @@ export async function createFeedPost(
 
   if (error) throw error
 
-  const d = data as unknown as {
-    author?: { name?: string; avatar_url?: string | null } | null
-    ticket?: { titulo?: string; codigo?: string | null } | null
-  } & Record<string, unknown>
+  const r = data as Record<string, unknown>
+  const author = r.author as { name?: string; avatar_url?: string | null } | null | undefined
+  const ticket = r.ticket as { titulo?: string; codigo?: string | null } | null | undefined
   return {
-    id: d.id as string,
-    author_id: d.author_id as string,
-    author_name: d.author?.name ?? 'Usuário',
-    author_avatar_url: d.author?.avatar_url ?? null,
-    tipo: d.tipo as FeedPostTipo,
-    conteudo: d.conteudo as string,
-    ticket_id: (d.ticket_id as string | null) ?? null,
-    ticket_titulo: d.ticket?.titulo ?? null,
-    ticket_codigo: d.ticket?.codigo ?? null,
-    created_at: d.created_at as string,
+    id: r.id as string,
+    author_id: r.author_id as string,
+    author_name: author?.name ?? 'Usuário',
+    author_avatar_url: author?.avatar_url ?? null,
+    tipo: r.tipo as FeedPostTipo,
+    conteudo: r.conteudo as string,
+    ticket_id: (r.ticket_id as string | null) ?? null,
+    ticket_titulo: ticket?.titulo ?? null,
+    ticket_codigo: ticket?.codigo ?? null,
+    created_at: r.created_at as string,
     attachments: [],
   }
 }
