@@ -21,7 +21,10 @@ import {
   listTicketTasks,
   createTicketTask,
   updateTicketTaskStatus,
+  updateTicketTaskResponsavel,
 } from '../services/tickets'
+import { listAppUsers } from '../services/appUsers'
+import type { AppUserOption } from '../services/appUsers'
 import type {
   TicketComment,
   TicketFile,
@@ -60,9 +63,11 @@ export function TicketDetailPage() {
   const [uploading, setUploading] = useState(false)
 
   const [tasks, setTasks] = useState<TicketTask[]>([])
+  const [appUsers, setAppUsers] = useState<AppUserOption[]>([])
   const [showNewTaskForm, setShowNewTaskForm] = useState(false)
   const [taskTitulo, setTaskTitulo] = useState('')
   const [taskDescricao, setTaskDescricao] = useState('')
+  const [taskResponsavelId, setTaskResponsavelId] = useState<string>('')
   const [savingTask, setSavingTask] = useState(false)
 
   const { appUser } = useAuth()
@@ -104,14 +109,16 @@ export function TicketDetailPage() {
           return
         }
         setTicket(data)
-        const [c, f, t] = await Promise.all([
+        const [c, f, t, users] = await Promise.all([
           listComments(id),
           listTicketFiles(id),
           listTicketTasks(id),
+          listAppUsers(),
         ])
         setComments(c)
         setFiles(f)
         setTasks(t)
+        setAppUsers(users)
       } catch (err) {
         const message =
           err instanceof Error ? err.message : 'Erro ao carregar demanda.'
@@ -163,17 +170,19 @@ export function TicketDetailPage() {
 
   const handleCreateTask = async (event: FormEvent) => {
     event.preventDefault()
-    if (!id || !appUser || !taskTitulo.trim()) return
+    const responsavelId = taskResponsavelId || appUser?.id
+    if (!id || !appUser || !taskTitulo.trim() || !responsavelId) return
     setSavingTask(true)
     try {
       const newTask = await createTicketTask(id, {
         titulo: taskTitulo.trim(),
         descricao: taskDescricao.trim() || null,
-        responsavel_id: appUser.id,
+        responsavel_id: responsavelId,
       })
       setTasks((prev) => [...prev, newTask])
       setTaskTitulo('')
       setTaskDescricao('')
+      setTaskResponsavelId(appUser.id)
       setShowNewTaskForm(false)
     } catch (err) {
       const message =
@@ -193,6 +202,23 @@ export function TicketDetailPage() {
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Erro ao atualizar status.'
+      setError(message)
+    }
+  }
+
+  const handleTaskResponsavelChange = async (taskId: number, responsavel_id: string) => {
+    const user = appUsers.find((u) => u.id === responsavel_id)
+    const nome = user?.name ?? '—'
+    try {
+      await updateTicketTaskResponsavel(taskId, responsavel_id)
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === taskId ? { ...t, responsavel_id, responsavel_nome: nome } : t,
+        ),
+      )
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Erro ao alterar responsável.'
       setError(message)
     }
   }
@@ -721,7 +747,10 @@ export function TicketDetailPage() {
                 {!ticket.excluida_em && appUser && (
                   <button
                     type="button"
-                    onClick={() => setShowNewTaskForm((v) => !v)}
+                    onClick={() => {
+                      setShowNewTaskForm((v) => !v)
+                      if (!showNewTaskForm) setTaskResponsavelId(appUser.id)
+                    }}
                     className="rounded-lg bg-emerald-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-600"
                   >
                     + Nova Task
@@ -747,9 +776,20 @@ export function TicketDetailPage() {
                     rows={2}
                     className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
                   />
-                  <p className="text-xs text-slate-500">
-                    Responsável: você ({appUser.name})
-                  </p>
+                  <label className="block text-xs font-medium text-slate-600">
+                    Responsável
+                  </label>
+                  <select
+                    value={taskResponsavelId}
+                    onChange={(e) => setTaskResponsavelId(e.target.value)}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  >
+                    {appUsers.map((u) => (
+                      <option key={u.id} value={u.id}>
+                        {u.name}
+                      </option>
+                    ))}
+                  </select>
                   <div className="flex gap-2">
                     <button
                       type="submit"
@@ -764,6 +804,7 @@ export function TicketDetailPage() {
                         setShowNewTaskForm(false)
                         setTaskTitulo('')
                         setTaskDescricao('')
+                        setTaskResponsavelId(appUser?.id ?? '')
                       }}
                       className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
                     >
@@ -786,13 +827,36 @@ export function TicketDetailPage() {
                         </p>
                       )}
                       <p className="mt-1 text-xs text-slate-400">
-                        Responsável: {task.responsavel_nome}
                         {task.created_by_nome && (
-                          <> · Criada por {task.created_by_nome}</>
-                        )}{' '}
-                        · {new Date(task.created_at).toLocaleString()}
+                          <>Criada por {task.created_by_nome} · </>
+                        )}
+                        {new Date(task.created_at).toLocaleString()}
                       </p>
                     </div>
+                    {!ticket.excluida_em && (
+                      <select
+                        value={task.responsavel_id}
+                        onChange={(e) =>
+                          handleTaskResponsavelChange(
+                            task.id,
+                            e.target.value,
+                          )
+                        }
+                        className="shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        title="Alterar responsável"
+                      >
+                        {appUsers.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.name}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    {ticket.excluida_em && (
+                      <span className="text-xs text-slate-500 shrink-0">
+                        {task.responsavel_nome}
+                      </span>
+                    )}
                     <span
                       className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
                         task.status === 'concluido'

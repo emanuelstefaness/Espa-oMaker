@@ -681,6 +681,19 @@ export async function updateTicketTaskStatus(
   if (error) throw error
 }
 
+/** Qualquer usuário autenticado pode alterar o responsável da task. */
+export async function updateTicketTaskResponsavel(
+  taskId: number,
+  responsavel_id: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('ticket_tasks')
+    .update({ responsavel_id })
+    .eq('id', taskId)
+
+  if (error) throw error
+}
+
 export interface TicketFile {
   id: number
   ticket_id: string
