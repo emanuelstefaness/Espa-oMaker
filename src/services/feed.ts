@@ -111,7 +111,7 @@ export async function createFeedPost(
   input: CreateFeedPostInput,
   authorId: string,
 ): Promise<FeedPost> {
-  const { data, error } = await supabase
+  const { data: row, error } = await supabase
     .from('feed_posts')
     .insert({
       author_id: authorId,
@@ -119,36 +119,36 @@ export async function createFeedPost(
       conteudo: input.conteudo.trim(),
       ticket_id: input.ticket_id || null,
     })
-    .select(
-      `
-      id,
-      author_id,
-      tipo,
-      conteudo,
-      ticket_id,
-      created_at,
-      author:author_id ( id, name, avatar_url ),
-      ticket:ticket_id ( id, titulo, codigo )
-    `,
-    )
+    .select('id, author_id, tipo, conteudo, ticket_id, created_at')
     .single()
 
   if (error) throw error
+  if (!row) throw new Error('Post não retornado')
 
-  const r = data as Record<string, unknown>
-  const author = r.author as { name?: string; avatar_url?: string | null } | null | undefined
-  const ticket = r.ticket as { titulo?: string; codigo?: string | null } | null | undefined
+  const authorIdVal = row.author_id as string
+  const ticketIdVal = row.ticket_id as string | null
+
+  const [authorRes, ticketRes] = await Promise.all([
+    supabase.from('app_users').select('name, avatar_url').eq('id', authorIdVal).single(),
+    ticketIdVal
+      ? supabase.from('tickets').select('titulo, codigo').eq('id', ticketIdVal).single()
+      : Promise.resolve({ data: null }),
+  ])
+
+  const author = authorRes.data as { name: string; avatar_url: string | null } | null
+  const ticket = ticketRes.data as { titulo: string; codigo: string | null } | null
+
   return {
-    id: r.id as string,
-    author_id: r.author_id as string,
+    id: row.id,
+    author_id: authorIdVal,
     author_name: author?.name ?? 'Usuário',
     author_avatar_url: author?.avatar_url ?? null,
-    tipo: r.tipo as FeedPostTipo,
-    conteudo: r.conteudo as string,
-    ticket_id: (r.ticket_id as string | null) ?? null,
+    tipo: row.tipo as FeedPostTipo,
+    conteudo: row.conteudo,
+    ticket_id: ticketIdVal,
     ticket_titulo: ticket?.titulo ?? null,
     ticket_codigo: ticket?.codigo ?? null,
-    created_at: r.created_at as string,
+    created_at: row.created_at,
     attachments: [],
   }
 }
