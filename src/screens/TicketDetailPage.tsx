@@ -155,8 +155,12 @@ export function TicketDetailPage() {
   const handleCommentSubmit = async (event: FormEvent) => {
     event.preventDefault()
     if (!id || !commentText.trim()) return
+    if (!appUser) {
+      setError('Faça login para enviar comentários.')
+      return
+    }
     try {
-      await addComment(id, commentText.trim())
+      await addComment(id, commentText.trim(), appUser.id)
       setCommentText('')
       const data = await listComments(id)
       setComments(data)
@@ -904,90 +908,96 @@ export function TicketDetailPage() {
                         </div>
                       </form>
                     ) : (
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="min-w-0 flex-1">
+                      <div className="flex flex-col gap-3">
+                        <div>
                           <p className="font-medium text-slate-800">{task.titulo}</p>
                           {task.descricao && (
-                            <p className="mt-0.5 text-xs text-slate-500 line-clamp-2">
+                            <p className="mt-0.5 text-sm text-slate-600 line-clamp-2">
                               {task.descricao}
                             </p>
                           )}
-                          <p className="mt-1 text-xs text-slate-400">
+                          <p className="mt-1.5 text-xs text-slate-400">
                             {task.created_by_nome && (
                               <>Criada por {task.created_by_nome} · </>
                             )}
                             {new Date(task.created_at).toLocaleString()}
                           </p>
                         </div>
-                        {!ticket.excluida_em && (
-                          <select
-                            value={task.responsavel_id}
-                            onChange={(e) =>
-                              handleTaskResponsavelChange(
-                                task.id,
-                                e.target.value,
-                              )
-                            }
-                            className="shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                            title="Alterar responsável"
-                          >
-                            {appUsers.map((u) => (
-                              <option key={u.id} value={u.id}>
-                                {u.name}
-                              </option>
-                            ))}
-                          </select>
-                        )}
-                        {ticket.excluida_em && (
-                          <span className="text-xs text-slate-500 shrink-0">
-                            {task.responsavel_nome}
-                          </span>
-                        )}
-                        <span
-                          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-                            task.status === 'concluido'
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : task.status === 'em_producao'
-                                ? 'bg-violet-100 text-violet-800'
-                                : 'bg-amber-100 text-amber-800'
-                          }`}
-                        >
-                          {TASK_STATUS_LABELS[task.status]}
-                        </span>
-                        {!ticket.excluida_em && (
-                          <select
-                            value={task.status}
-                            onChange={(e) =>
-                              handleTaskStatusChange(
-                                task.id,
-                                e.target.value as TicketTaskStatus,
-                              )
-                            }
-                            className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                          >
-                            <option value="pendente">Pendente</option>
-                            <option value="em_producao">Em produção</option>
-                            <option value="concluido">Concluído</option>
-                          </select>
-                        )}
-                        {!ticket.excluida_em && (
-                          <div className="flex shrink-0 gap-1">
-                            <button
-                              type="button"
-                              onClick={() => handleEditTaskStart(task)}
-                              className="rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-600 hover:bg-slate-50"
-                            >
-                              Editar
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => handleDeleteTask(task.id)}
-                              className="rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-700 hover:bg-rose-100"
-                            >
-                              Excluir
-                            </button>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg bg-slate-50 px-3 py-2 border border-slate-100">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-slate-500">Responsável</span>
+                            {!ticket.excluida_em ? (
+                              <select
+                                value={task.responsavel_id}
+                                onChange={(e) =>
+                                  handleTaskResponsavelChange(
+                                    task.id,
+                                    e.target.value,
+                                  )
+                                }
+                                className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                                title="Alterar responsável"
+                              >
+                                {appUsers.map((u) => (
+                                  <option key={u.id} value={u.id}>
+                                    {u.name}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <span className="text-xs text-slate-600">{task.responsavel_nome}</span>
+                            )}
                           </div>
-                        )}
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-medium text-slate-500">Status</span>
+                            {!ticket.excluida_em ? (
+                              <select
+                                value={task.status}
+                                onChange={(e) =>
+                                  handleTaskStatusChange(
+                                    task.id,
+                                    e.target.value as TicketTaskStatus,
+                                  )
+                                }
+                                className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                              >
+                                <option value="pendente">Pendente</option>
+                                <option value="em_producao">Em produção</option>
+                                <option value="concluido">Concluído</option>
+                              </select>
+                            ) : (
+                              <span
+                                className={`rounded-full px-2 py-0.5 text-xs font-medium ${
+                                  task.status === 'concluido'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : task.status === 'em_producao'
+                                      ? 'bg-violet-100 text-violet-800'
+                                      : 'bg-amber-100 text-amber-800'
+                                }`}
+                              >
+                                {TASK_STATUS_LABELS[task.status]}
+                              </span>
+                            )}
+                          </div>
+                          {!ticket.excluida_em && (
+                            <div className="ml-auto flex items-center gap-2 border-l border-slate-200 pl-3">
+                              <button
+                                type="button"
+                                onClick={() => handleEditTaskStart(task)}
+                                className="rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100"
+                              >
+                                Editar
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteTask(task.id)}
+                                className="rounded-md border border-rose-200 bg-rose-50 px-2.5 py-1 text-xs font-medium text-rose-700 hover:bg-rose-100"
+                              >
+                                Excluir
+                              </button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

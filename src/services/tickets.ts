@@ -236,8 +236,15 @@ export async function getTicket(id: string): Promise<Ticket | null> {
   return mapRowToTicket(data)
 }
 
-/** Marca a demanda como excluída (some das listas; na página fica só leitura). */
+/** Marca a demanda como excluída (some das listas; na página fica só leitura). Exclui as tasks da demanda. */
 export async function setTicketExcluida(id: string): Promise<void> {
+  const { error: deleteTasksError } = await supabase
+    .from('ticket_tasks')
+    .delete()
+    .eq('ticket_id', id)
+
+  if (deleteTasksError) throw deleteTasksError
+
   const { error } = await supabase
     .from('tickets')
     .update({ excluida_em: new Date().toISOString() })
@@ -548,10 +555,11 @@ export async function listComments(ticketId: string): Promise<TicketComment[]> {
 export async function addComment(
   ticketId: string,
   body: string,
+  authorId: string,
 ): Promise<void> {
   const { error } = await supabase
     .from('ticket_comments')
-    .insert({ ticket_id: ticketId, body })
+    .insert({ ticket_id: ticketId, body, author_id: authorId })
 
   if (error) throw error
 }
@@ -576,6 +584,92 @@ export interface TicketTask {
 /** Tasks atribuídas a um responsável (para exibir em "Minhas demandas"). */
 export interface TicketTaskWithDemanda extends TicketTask {
   ticket_titulo: string
+}
+
+/** Contagem de demandas e tasks por pessoa (para "Minhas demandas"). Demandas = onde a pessoa é responsável ou colaborador; tasks = onde é responsável. Só demandas não excluídas e não canceladas. */
+export interface DemandasTasksCountPorUsuario {
+  user_id: string
+  user_name: string
+  demandas_count: number
+  tasks_count: number
+}
+
+export async function getDemandasAndTasksCountPerUser(): Promise<
+  DemandasTasksCountPorUsuario[]
+> {
+  const { data: ticketsData } = await supabase
+    .from('tickets')
+    .select('id, responsavel_id, colaborador_id')
+    .is('excluida_em', null)
+    .neq('status', 'cancelada')
+    .limit(5000)
+
+  const tickets = ticketsData ?? []
+  const demandasPorUser = new Map<string, number>()
+  const ticketIdsNaoExcluidos = new Set<string>()
+
+  for (const t of tickets) {
+    ticketIdsNaoExcluidos.add(t.id)
+    if (t.responsavel_id) {
+      demandasPorUser.set(
+        t.responsavel_id,
+        (demandasPorUser.get(t.responsavel_id) ?? 0) + 1,
+      )
+    }
+    if (t.colaborador_id && t.colaborador_id !== t.responsavel_id) {
+      demandasPorUser.set(
+        t.colaborador_id,
+        (demandasPorUser.get(t.colaborador_id) ?? 0) + 1,
+      )
+    }
+  }
+
+  const ids = Array.from(ticketIdsNaoExcluidos)
+  const tasksPorUser = new Map<string, number>()
+  if (ids.length > 0) {
+    const chunk = 200
+    for (let i = 0; i < ids.length; i += chunk) {
+      const slice = ids.slice(i, i + chunk)
+      const { data: tasksData } = await supabase
+        .from('ticket_tasks')
+        .select('responsavel_id')
+        .in('ticket_id', slice)
+      for (const row of tasksData ?? []) {
+        if (row.responsavel_id) {
+          tasksPorUser.set(
+            row.responsavel_id,
+            (tasksPorUser.get(row.responsavel_id) ?? 0) + 1,
+          )
+        }
+      }
+    }
+  }
+
+  const userIds = new Set([
+    ...demandasPorUser.keys(),
+    ...tasksPorUser.keys(),
+  ])
+  if (userIds.size === 0) return []
+
+  const { data: usersData } = await supabase
+    .from('app_users')
+    .select('id, name')
+    .in('id', Array.from(userIds))
+
+  const names = new Map<string, string>()
+  for (const u of usersData ?? []) {
+    names.set(u.id, u.name ?? '—')
+  }
+
+  return Array.from(userIds)
+    .map((user_id) => ({
+      user_id,
+      user_name: names.get(user_id) ?? '—',
+      demandas_count: demandasPorUser.get(user_id) ?? 0,
+      tasks_count: tasksPorUser.get(user_id) ?? 0,
+    }))
+    .filter((r) => r.demandas_count > 0 || r.tasks_count > 0)
+    .sort((a, b) => a.user_name.localeCompare(b.user_name))
 }
 
 export async function listTasksByResponsavel(
