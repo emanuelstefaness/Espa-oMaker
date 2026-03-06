@@ -573,6 +573,53 @@ export interface TicketTask {
   status: TicketTaskStatus
 }
 
+/** Tasks atribuídas a um responsável (para exibir em "Minhas demandas"). */
+export interface TicketTaskWithDemanda extends TicketTask {
+  ticket_titulo: string
+}
+
+export async function listTasksByResponsavel(
+  responsavelId: string,
+): Promise<TicketTaskWithDemanda[]> {
+  const { data, error } = await supabase
+    .from('ticket_tasks')
+    .select(
+      `
+        id,
+        ticket_id,
+        titulo,
+        descricao,
+        responsavel_id,
+        created_by,
+        created_at,
+        status,
+        responsavel:responsavel_id ( id, name ),
+        creator:created_by ( id, name ),
+        ticket:ticket_id ( id, titulo )
+      `,
+    )
+    .eq('responsavel_id', responsavelId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+
+  return (
+    data?.map((row: any) => ({
+      id: row.id,
+      ticket_id: row.ticket_id,
+      titulo: row.titulo,
+      descricao: row.descricao ?? null,
+      responsavel_id: row.responsavel_id,
+      responsavel_nome: row.responsavel?.name ?? '—',
+      created_by: row.created_by ?? null,
+      created_by_nome: row.creator?.name ?? null,
+      created_at: row.created_at,
+      status: row.status,
+      ticket_titulo: row.ticket?.titulo ?? 'Demanda',
+    })) ?? []
+  )
+}
+
 export async function listTicketTasks(ticketId: string): Promise<TicketTask[]> {
   const { data, error } = await supabase
     .from('ticket_tasks')

@@ -11,9 +11,19 @@ import type {
   TicketStatus,
   TicketTipo,
 } from '../types/ticket'
-import { listTickets } from '../services/tickets'
+import {
+  listTickets,
+  listTasksByResponsavel,
+} from '../services/tickets'
+import type { TicketTaskWithDemanda } from '../services/tickets'
 import { useAuth } from '../auth/AuthContext'
 import { getTicketCardClasses } from '../constants/ticketOptions'
+
+const TASK_STATUS_LABEL: Record<string, string> = {
+  pendente: 'Pendente',
+  em_producao: 'Em produção',
+  concluido: 'Concluído',
+}
 
 const PAGE_SIZE = 80
 
@@ -39,6 +49,7 @@ export function TicketListPage() {
   const location = useLocation()
   const { appUser } = useAuth()
   const isMinhasDemandas = location.pathname === '/demandas/minhas'
+  const [myTasks, setMyTasks] = useState<TicketTaskWithDemanda[]>([])
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
@@ -113,6 +124,11 @@ export function TicketListPage() {
   useEffect(() => {
     if (isMinhasDemandas) {
       load(0)
+      if (appUser?.id) {
+        listTasksByResponsavel(appUser.id).then(setMyTasks).catch(() => setMyTasks([]))
+      } else {
+        setMyTasks([])
+      }
       return
     }
     const params = new URLSearchParams(location.search)
@@ -240,6 +256,53 @@ export function TicketListPage() {
         {error && (
           <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
             {error}
+          </div>
+        )}
+
+        {isMinhasDemandas && (
+          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <h2 className="text-sm font-semibold text-slate-700">
+              Tasks atribuídas a mim
+            </h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Tasks de qualquer demanda em que você é o responsável.
+            </p>
+            {myTasks.length === 0 ? (
+              <p className="mt-3 text-sm text-slate-500">Nenhuma task atribuída a você.</p>
+            ) : (
+              <ul className="mt-3 space-y-2">
+                {myTasks.map((task) => (
+                  <li
+                    key={task.id}
+                    className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-slate-800">{task.titulo}</p>
+                      <p className="text-xs text-slate-500">
+                        Demanda: {task.ticket_titulo}
+                      </p>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+                        task.status === 'concluido'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : task.status === 'em_producao'
+                            ? 'bg-violet-100 text-violet-800'
+                            : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
+                      {TASK_STATUS_LABEL[task.status] ?? task.status}
+                    </span>
+                    <Link
+                      to={`/demandas/${task.ticket_id}`}
+                      className="shrink-0 text-sm font-medium text-blue-600 hover:text-blue-700"
+                    >
+                      Ver demanda
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         )}
 
