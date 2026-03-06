@@ -309,18 +309,38 @@ export function FeedPage() {
                       )}
                       {post.attachments.length > 0 && (
                         <ul className="mt-2 flex flex-wrap gap-2">
-                          {post.attachments.map((a) => (
-                            <li key={a.id}>
-                              <a
-                                href={a.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-700 hover:bg-slate-100"
-                              >
-                                {a.file_name}
-                              </a>
-                            </li>
-                          ))}
+                          {post.attachments.map((a) => {
+                            const isImage =
+                              (a.mime_type && a.mime_type.startsWith('image/')) ||
+                              /\.(png|jpe?g|gif|webp|bmp)$/i.test(a.file_name)
+                            return (
+                              <li key={a.id}>
+                                {isImage ? (
+                                  <a
+                                    href={a.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="block overflow-hidden rounded-lg border border-slate-200 bg-slate-100"
+                                  >
+                                    <img
+                                      src={a.url}
+                                      alt={a.file_name}
+                                      className="max-h-64 max-w-full object-contain"
+                                    />
+                                  </a>
+                                ) : (
+                                  <a
+                                    href={a.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center rounded border border-slate-200 bg-slate-50 px-2 py-1 text-xs text-slate-700 hover:bg-slate-100"
+                                  >
+                                    {a.file_name}
+                                  </a>
+                                )}
+                              </li>
+                            )
+                          })}
                         </ul>
                       )}
                       <button
