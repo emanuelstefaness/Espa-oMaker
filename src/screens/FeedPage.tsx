@@ -70,14 +70,23 @@ export function FeedPage() {
         },
         appUser.id,
       )
+      const uploadErrors: string[] = []
       for (const file of files) {
-        await uploadFeedPostAttachment(post.id, file, appUser.id)
+        try {
+          await uploadFeedPostAttachment(post.id, file, appUser.id)
+        } catch (uploadErr) {
+          const msg = uploadErr instanceof Error ? uploadErr.message : 'Falha no envio'
+          uploadErrors.push(`${file.name}: ${msg}`)
+        }
       }
       setConteudo('')
       setTicketId('')
       setFiles([])
       setShowNewPostModal(false)
       loadPosts()
+      if (uploadErrors.length > 0) {
+        setError(`Post publicado. Não foi possível enviar alguns anexos: ${uploadErrors.join('; ')}`)
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao publicar.')
     } finally {

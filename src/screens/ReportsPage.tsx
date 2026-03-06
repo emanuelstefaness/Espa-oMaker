@@ -364,10 +364,13 @@ function buildReports(tickets: Ticket[]): ReportsData {
     .filter(
       (t) =>
         t.tipo === 'externa' &&
-        t.orcamento &&
-        t.orcamento.status === 'aprovado',
+        (t.orcamento?.status === 'aprovado' || t.valor_demanda != null),
     )
-    .reduce((sum, t) => sum + (t.orcamento?.total ?? 0), 0)
+    .reduce(
+      (sum, t) =>
+        sum + (t.valor_demanda ?? t.orcamento?.total ?? 0),
+      0,
+    )
 
   const entregues = tickets.filter(
     (t) => t.status === 'entregue' && t.data_entrega,
