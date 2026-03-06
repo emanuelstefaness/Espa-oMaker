@@ -11,6 +11,7 @@ import { ReadyGalleryPage } from './screens/ReadyGalleryPage'
 import { ReportsPage } from './screens/ReportsPage'
 import { SolicitarPage } from './screens/SolicitarPage'
 import { WhatsAppDemandsPage } from './screens/WhatsAppDemandsPage'
+import { FeedPage } from './screens/FeedPage'
 import { isSupabaseConfigured } from './lib/supabaseClient'
 
 function App() {
@@ -109,6 +110,15 @@ function App() {
             element={
               <ProtectedRoute>
                 <ReportsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/feed"
+            element={
+              <ProtectedRoute>
+                <FeedPage />
               </ProtectedRoute>
             }
           />
