@@ -14,12 +14,8 @@ import type {
 import {
   listTickets,
   listTasksByResponsavel,
-  getDemandasAndTasksCountPerUser,
 } from '../services/tickets'
-import type {
-  TicketTaskWithDemanda,
-  DemandasTasksCountPorUsuario,
-} from '../services/tickets'
+import type { TicketTaskWithDemanda } from '../services/tickets'
 import { useAuth } from '../auth/AuthContext'
 import { getTicketCardClasses } from '../constants/ticketOptions'
 
@@ -54,9 +50,6 @@ export function TicketListPage() {
   const { appUser } = useAuth()
   const isMinhasDemandas = location.pathname === '/demandas/minhas'
   const [myTasks, setMyTasks] = useState<TicketTaskWithDemanda[]>([])
-  const [countsPerUser, setCountsPerUser] = useState<
-    DemandasTasksCountPorUsuario[]
-  >([])
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
@@ -136,9 +129,6 @@ export function TicketListPage() {
       } else {
         setMyTasks([])
       }
-      getDemandasAndTasksCountPerUser()
-        .then(setCountsPerUser)
-        .catch(() => setCountsPerUser([]))
       return
     }
     const params = new URLSearchParams(location.search)
@@ -186,9 +176,18 @@ export function TicketListPage() {
               {isMinhasDemandas ? 'Minhas demandas' : 'Todas as demandas'}
             </h1>
             <p className="mt-1 text-sm text-slate-500">
-              {isMinhasDemandas
-                ? 'Demandas em que você é responsável ou colaborador.'
-                : 'Lista com demandas, prazos e responsáveis.'}
+              {isMinhasDemandas ? (
+                <>
+                  Demandas em que você é responsável ou colaborador.
+                  {!loading && (
+                    <span className="ml-1 font-medium text-slate-600">
+                      Você tem {tickets.length} demanda{tickets.length !== 1 ? 's' : ''} e {myTasks.length} task{myTasks.length !== 1 ? 's' : ''}.
+                    </span>
+                  )}
+                </>
+              ) : (
+                'Lista com demandas, prazos e responsáveis.'
+              )}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -266,47 +265,6 @@ export function TicketListPage() {
         {error && (
           <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
             {error}
-          </div>
-        )}
-
-        {isMinhasDemandas && countsPerUser.length > 0 && (
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-700">
-              Demandas e tasks por pessoa
-            </h2>
-            <p className="mt-0.5 text-xs text-slate-500">
-              Quantidade de demandas (como responsável ou colaborador) e de tasks atribuídas.
-            </p>
-            <div className="mt-3 overflow-x-auto">
-              <table className="w-full min-w-[280px] text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200 text-left text-xs font-medium uppercase text-slate-500">
-                    <th className="py-2 pr-4">Pessoa</th>
-                    <th className="py-2 pr-4 text-right">Demandas</th>
-                    <th className="py-2 text-right">Tasks</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {countsPerUser.map((row) => (
-                    <tr key={row.user_id} className="text-slate-700">
-                      <td className="py-2 pr-4">
-                        {row.user_id === appUser?.id ? (
-                          <span className="font-medium">Você</span>
-                        ) : (
-                          row.user_name
-                        )}
-                      </td>
-                      <td className="py-2 pr-4 text-right tabular-nums">
-                        {row.demandas_count}
-                      </td>
-                      <td className="py-2 text-right tabular-nums">
-                        {row.tasks_count}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
           </div>
         )}
 
