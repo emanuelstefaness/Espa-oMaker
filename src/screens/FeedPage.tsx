@@ -113,7 +113,9 @@ export function FeedPage() {
       setShowNewPostModal(false)
       loadPosts()
       if (uploadErrors.length > 0) {
-        setError(`Post publicado. Não foi possível enviar alguns anexos: ${uploadErrors.join('; ')}`)
+        setError(
+          `Post publicado, mas não foi possível enviar os anexos: ${uploadErrors.join('; ')}. Verifique se o bucket "feed-files" existe no Storage do Supabase (Storage → New bucket).`,
+        )
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao publicar.')

@@ -231,6 +231,9 @@ export async function listTicketsForFeed(): Promise<TicketOption[]> {
   }))
 }
 
+const FEED_UPLOAD_HINT =
+  ' Crie o bucket no Supabase: Storage → New bucket → id "feed-files", marque como público. Ou execute o script supabase/migration-feed.sql.'
+
 /** Faz upload de anexo para um post. */
 export async function uploadFeedPostAttachment(
   postId: string,
@@ -249,7 +252,14 @@ export async function uploadFeedPostAttachment(
     .from(FEED_BUCKET)
     .upload(path, file, { cacheControl: '3600', upsert: false })
 
-  if (uploadError) throw uploadError
+  if (uploadError) {
+    const msg = uploadError.message ?? String(uploadError)
+    const isBucketOrPolicy =
+      /bucket|not found|resource|policy|denied|permission/i.test(msg)
+    throw new Error(
+      msg + (isBucketOrPolicy ? FEED_UPLOAD_HINT : ''),
+    )
+  }
 
   const { error: insertError } = await supabase
     .from('feed_post_attachments')
@@ -262,7 +272,10 @@ export async function uploadFeedPostAttachment(
       size_bytes: file.size,
     })
 
-  if (insertError) throw insertError
+  if (insertError) {
+    const msg = insertError.message ?? String(insertError)
+    throw new Error(msg + (msg.includes('policy') || msg.includes('row') ? FEED_UPLOAD_HINT : ''))
+  }
 }
 
 // --- Comentários em posts do feed ---
