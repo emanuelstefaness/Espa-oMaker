@@ -360,11 +360,18 @@ function buildReports(tickets: Ticket[]): ReportsData {
     .map(([responsavel, total]) => ({ responsavel, total }))
     .sort((a, b) => b.total - a.total)
 
+  const statusAprovadoOuApos = [
+    'aprovado',
+    'em_producao',
+    'pos_processo',
+    'pronta',
+    'entregue',
+  ] as const
   const receitaTotalExternas = tickets
     .filter(
       (t) =>
         t.tipo === 'externa' &&
-        (t.orcamento?.status === 'aprovado' || t.valor_demanda != null),
+        statusAprovadoOuApos.includes(t.status as (typeof statusAprovadoOuApos)[number]),
     )
     .reduce(
       (sum, t) =>

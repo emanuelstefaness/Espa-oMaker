@@ -153,6 +153,66 @@ export async function createFeedPost(
   }
 }
 
+/** Atualiza um post (apenas o autor). */
+export interface UpdateFeedPostInput {
+  tipo?: FeedPostTipo
+  conteudo?: string
+  ticket_id?: string | null
+}
+
+export async function updateFeedPost(
+  postId: string,
+  input: UpdateFeedPostInput,
+): Promise<FeedPost> {
+  const payload: Record<string, unknown> = {}
+  if (input.tipo !== undefined) payload.tipo = input.tipo
+  if (input.conteudo !== undefined) payload.conteudo = input.conteudo.trim()
+  if (input.ticket_id !== undefined) payload.ticket_id = input.ticket_id || null
+
+  const { data: row, error } = await supabase
+    .from('feed_posts')
+    .update(payload)
+    .eq('id', postId)
+    .select('id, author_id, tipo, conteudo, ticket_id, created_at')
+    .single()
+
+  if (error) throw error
+  if (!row) throw new Error('Post não encontrado')
+
+  const authorIdVal = row.author_id as string
+  const ticketIdVal = row.ticket_id as string | null
+
+  const [authorRes, ticketRes] = await Promise.all([
+    supabase.from('app_users').select('name, avatar_url').eq('id', authorIdVal).single(),
+    ticketIdVal
+      ? supabase.from('tickets').select('titulo, codigo').eq('id', ticketIdVal).single()
+      : Promise.resolve({ data: null }),
+  ])
+
+  const author = authorRes.data as { name: string; avatar_url: string | null } | null
+  const ticket = ticketRes.data as { titulo: string; codigo: string | null } | null
+
+  return {
+    id: row.id,
+    author_id: authorIdVal,
+    author_name: author?.name ?? 'Usuário',
+    author_avatar_url: author?.avatar_url ?? null,
+    tipo: row.tipo as FeedPostTipo,
+    conteudo: row.conteudo,
+    ticket_id: ticketIdVal,
+    ticket_titulo: ticket?.titulo ?? null,
+    ticket_codigo: ticket?.codigo ?? null,
+    created_at: row.created_at,
+    attachments: [], // edição não altera anexos; ao recarregar o feed eles vêm
+  }
+}
+
+/** Exclui um post (apenas o autor). Comentários e anexos são removidos em cascata. */
+export async function deleteFeedPost(postId: string): Promise<void> {
+  const { error } = await supabase.from('feed_posts').delete().eq('id', postId)
+  if (error) throw error
+}
+
 /** Lista demandas (id, titulo, codigo) para o seletor do feed. Apenas não excluídas. */
 export async function listTicketsForFeed(): Promise<TicketOption[]> {
   const { data, error } = await supabase
@@ -203,4 +263,88 @@ export async function uploadFeedPostAttachment(
     })
 
   if (insertError) throw insertError
+}
+
+// --- Comentários em posts do feed ---
+
+export interface FeedPostComment {
+  id: string
+  post_id: string
+  author_id: string
+  author_name: string
+  author_avatar_url: string | null
+  body: string
+  created_at: string
+}
+
+/** Lista comentários de vários posts (para exibir no feed). */
+export async function listFeedPostComments(
+  postIds: string[],
+): Promise<FeedPostComment[]> {
+  if (postIds.length === 0) return []
+  const { data, error } = await supabase
+    .from('feed_post_comments')
+    .select(
+      `
+      id,
+      post_id,
+      author_id,
+      body,
+      created_at,
+      author:author_id ( id, name, avatar_url )
+    `,
+    )
+    .in('post_id', postIds)
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+
+  return (data ?? []).map((row: any) => {
+    const author = row.author as { name?: string; avatar_url?: string | null } | null
+    return {
+      id: row.id,
+      post_id: row.post_id,
+      author_id: row.author_id,
+      author_name: author?.name ?? 'Usuário',
+      author_avatar_url: author?.avatar_url ?? null,
+      body: row.body,
+      created_at: row.created_at,
+    }
+  })
+}
+
+/** Adiciona um comentário a um post. */
+export async function addFeedPostComment(
+  postId: string,
+  body: string,
+  authorId: string,
+): Promise<FeedPostComment> {
+  const { data, error } = await supabase
+    .from('feed_post_comments')
+    .insert({ post_id: postId, author_id: authorId, body: body.trim() })
+    .select(
+      `
+      id,
+      post_id,
+      author_id,
+      body,
+      created_at,
+      author:author_id ( id, name, avatar_url )
+    `,
+    )
+    .single()
+
+  if (error) throw error
+
+  const row = data as any
+  const author = row?.author as { name?: string; avatar_url?: string | null } | null
+  return {
+    id: row.id,
+    post_id: row.post_id,
+    author_id: row.author_id,
+    author_name: author?.name ?? 'Usuário',
+    author_avatar_url: author?.avatar_url ?? null,
+    body: row.body,
+    created_at: row.created_at,
+  }
 }

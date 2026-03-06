@@ -6,12 +6,17 @@ import { UserAvatar } from '../components/UserAvatar'
 import {
   listFeedPosts,
   createFeedPost,
+  updateFeedPost,
+  deleteFeedPost,
   listTicketsForFeed,
   uploadFeedPostAttachment,
+  listFeedPostComments,
+  addFeedPostComment,
 } from '../services/feed'
 import type {
   FeedPost,
   FeedPostTipo,
+  FeedPostComment,
   TicketOption,
 } from '../services/feed'
 import { useAuth } from '../auth/AuthContext'
@@ -41,12 +46,35 @@ export function FeedPage() {
   const [publishing, setPublishing] = useState(false)
   const [files, setFiles] = useState<File[]>([])
   const [showNewPostModal, setShowNewPostModal] = useState(false)
+  const [commentsByPostId, setCommentsByPostId] = useState<Record<string, FeedPostComment[]>>({})
+  const [commentTextByPostId, setCommentTextByPostId] = useState<Record<string, string>>({})
+  const [submittingCommentPostId, setSubmittingCommentPostId] = useState<string | null>(null)
+  const [editingPostId, setEditingPostId] = useState<string | null>(null)
+  const [editTipo, setEditTipo] = useState<FeedPostTipo>('atualizacao')
+  const [editConteudo, setEditConteudo] = useState('')
+  const [editTicketId, setEditTicketId] = useState('')
+  const [savingEdit, setSavingEdit] = useState(false)
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null)
 
   const loadPosts = () => {
     setLoading(true)
     setError(null)
     listFeedPosts()
-      .then(setPosts)
+      .then((list) => {
+        setPosts(list)
+        if (list.length > 0) {
+          listFeedPostComments(list.map((p) => p.id))
+            .then((comments) => {
+              const byPost: Record<string, FeedPostComment[]> = {}
+              for (const c of comments) {
+                if (!byPost[c.post_id]) byPost[c.post_id] = []
+                byPost[c.post_id].push(c)
+              }
+              setCommentsByPostId(byPost)
+            })
+            .catch(() => setCommentsByPostId({}))
+        }
+      })
       .catch((err) => setError(err instanceof Error ? err.message : 'Erro ao carregar feed.'))
       .finally(() => setLoading(false))
   }
@@ -107,6 +135,72 @@ export function FeedPage() {
 
   const closeModal = () => {
     if (!publishing) setShowNewPostModal(false)
+  }
+
+  const handleCommentSubmit = async (postId: string) => {
+    const text = (commentTextByPostId[postId] ?? '').trim()
+    if (!appUser || !text) return
+    setSubmittingCommentPostId(postId)
+    try {
+      const comment = await addFeedPostComment(postId, text, appUser.id)
+      setCommentsByPostId((prev) => ({
+        ...prev,
+        [postId]: [...(prev[postId] ?? []), comment],
+      }))
+      setCommentTextByPostId((prev) => ({ ...prev, [postId]: '' }))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao enviar comentário.')
+    } finally {
+      setSubmittingCommentPostId(null)
+    }
+  }
+
+  const openEditPost = (post: FeedPost) => {
+    setEditingPostId(post.id)
+    setEditTipo(post.tipo)
+    setEditConteudo(post.conteudo)
+    setEditTicketId(post.ticket_id ?? '')
+  }
+
+  const handleEditPostSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    if (!editingPostId || !editConteudo.trim()) return
+    setSavingEdit(true)
+    setError(null)
+    try {
+      const updated = await updateFeedPost(editingPostId, {
+        tipo: editTipo,
+        conteudo: editConteudo.trim(),
+        ticket_id: editTicketId || null,
+      })
+      setPosts((prev) =>
+        prev.map((p) => (p.id === editingPostId ? { ...updated, attachments: p.attachments } : p)),
+      )
+      setEditingPostId(null)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao salvar.')
+    } finally {
+      setSavingEdit(false)
+    }
+  }
+
+  const handleDeletePost = async (postId: string) => {
+    if (!window.confirm('Excluir este post? Esta ação não pode ser desfeita.')) return
+    setDeletingPostId(postId)
+    setError(null)
+    try {
+      await deleteFeedPost(postId)
+      setPosts((prev) => prev.filter((p) => p.id !== postId))
+      setCommentsByPostId((prev) => {
+        const next = { ...prev }
+        delete next[postId]
+        return next
+      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao excluir.')
+    } finally {
+      setDeletingPostId(null)
+    }
   }
 
   return (
@@ -249,6 +343,94 @@ export function FeedPage() {
           </div>
         )}
 
+        {editingPostId && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-modal-title"
+          >
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={() => !savingEdit && setEditingPostId(null)}
+              aria-hidden="true"
+            />
+            <div className="relative w-full max-w-md rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h2 id="edit-modal-title" className="text-sm font-semibold text-slate-800">
+                  Editar post
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => !savingEdit && setEditingPostId(null)}
+                  className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                  aria-label="Fechar"
+                >
+                  ✕
+                </button>
+              </div>
+              <form onSubmit={handleEditPostSubmit} className="mt-3 space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500">Tipo</label>
+                  <select
+                    value={editTipo}
+                    onChange={(e) => setEditTipo(e.target.value as FeedPostTipo)}
+                    className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  >
+                    <option value="atualizacao">Atualização</option>
+                    <option value="bug">Bug</option>
+                    <option value="ideia">Ideia</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500">Conteúdo</label>
+                  <textarea
+                    value={editConteudo}
+                    onChange={(e) => setEditConteudo(e.target.value)}
+                    placeholder="Conteúdo do post"
+                    rows={3}
+                    required
+                    className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500">
+                    Vincular demanda (opcional)
+                  </label>
+                  <select
+                    value={editTicketId}
+                    onChange={(e) => setEditTicketId(e.target.value)}
+                    className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  >
+                    <option value="">Nenhuma</option>
+                    {ticketOptions.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.codigo ? `${t.codigo} – ` : ''}{t.titulo}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setEditingPostId(null)}
+                    className="flex-1 rounded-lg border border-slate-300 bg-white py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={savingEdit || !editConteudo.trim()}
+                    className="flex-1 rounded-lg bg-blue-500 py-2.5 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
+                  >
+                    {savingEdit ? 'Salvando...' : 'Salvar'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         {error && (
           <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
             {error}
@@ -279,18 +461,40 @@ export function FeedPage() {
                       size="md"
                     />
                     <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-medium text-slate-800">
-                          {post.author_name}
-                        </span>
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-medium ${TIPO_STYLES[post.tipo]}`}
-                        >
-                          {TIPO_LABELS[post.tipo]}
-                        </span>
-                        <span className="text-xs text-slate-400">
-                          {new Date(post.created_at).toLocaleString()}
-                        </span>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="font-medium text-slate-800">
+                            {post.author_name}
+                          </span>
+                          <span
+                            className={`rounded-full px-2 py-0.5 text-xs font-medium ${TIPO_STYLES[post.tipo]}`}
+                          >
+                            {TIPO_LABELS[post.tipo]}
+                          </span>
+                          <span className="text-xs text-slate-400">
+                            {new Date(post.created_at).toLocaleString()}
+                          </span>
+                        </div>
+                        {appUser && post.author_id === appUser.id && (
+                          <div className="flex gap-1">
+                            <button
+                              type="button"
+                              onClick={() => openEditPost(post)}
+                              disabled={deletingPostId === post.id}
+                              className="rounded border border-slate-200 bg-white px-2 py-1 text-xs text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                            >
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeletePost(post.id)}
+                              disabled={deletingPostId === post.id}
+                              className="rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-700 hover:bg-rose-100 disabled:opacity-50"
+                            >
+                              {deletingPostId === post.id ? 'Excluindo...' : 'Excluir'}
+                            </button>
+                          </div>
+                        )}
                       </div>
                       <p className="mt-1.5 whitespace-pre-wrap text-sm text-slate-700">
                         {post.conteudo}
@@ -343,13 +547,71 @@ export function FeedPage() {
                           })}
                         </ul>
                       )}
-                      <button
-                        type="button"
-                        className="mt-2 text-xs text-slate-500 hover:text-slate-700"
-                        aria-label="Comentários (em breve)"
-                      >
-                        💬 Comentários (em breve)
-                      </button>
+                      <div className="mt-3 border-t border-slate-100 pt-3">
+                        <p className="mb-2 text-xs font-medium text-slate-500">
+                          💬 Comentários ({commentsByPostId[post.id]?.length ?? 0})
+                        </p>
+                        <ul className="space-y-2">
+                          {(commentsByPostId[post.id] ?? []).map((c) => (
+                            <li
+                              key={c.id}
+                              className="flex gap-2 rounded-lg bg-slate-50 p-2"
+                            >
+                              <UserAvatar
+                                avatarUrl={c.author_avatar_url}
+                                name={c.author_name}
+                                size="sm"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <span className="text-xs font-medium text-slate-700">
+                                  {c.author_name}
+                                </span>
+                                <span className="ml-1 text-xs text-slate-400">
+                                  {new Date(c.created_at).toLocaleString()}
+                                </span>
+                                <p className="mt-0.5 whitespace-pre-wrap text-sm text-slate-700">
+                                  {c.body}
+                                </p>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                        {appUser && (
+                          <div className="mt-2 flex gap-2">
+                            <input
+                              type="text"
+                              value={commentTextByPostId[post.id] ?? ''}
+                              onChange={(e) =>
+                                setCommentTextByPostId((prev) => ({
+                                  ...prev,
+                                  [post.id]: e.target.value,
+                                }))
+                              }
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault()
+                                  handleCommentSubmit(post.id)
+                                }
+                              }}
+                              placeholder="Escreva um comentário..."
+                              className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleCommentSubmit(post.id)}
+                              disabled={
+                                submittingCommentPostId === post.id ||
+                                !(commentTextByPostId[post.id] ?? '').trim()
+                              }
+                              className="shrink-0 rounded-lg bg-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-300 disabled:opacity-50"
+                            >
+                              {submittingCommentPostId === post.id
+                                ? '...'
+                                : 'Enviar'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </li>
