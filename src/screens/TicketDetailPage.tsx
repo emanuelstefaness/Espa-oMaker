@@ -22,6 +22,8 @@ import {
   createTicketTask,
   updateTicketTaskStatus,
   updateTicketTaskResponsavel,
+  updateTicketTask,
+  deleteTicketTask,
 } from '../services/tickets'
 import { listAppUsers } from '../services/appUsers'
 import type { AppUserOption } from '../services/appUsers'
@@ -69,6 +71,9 @@ export function TicketDetailPage() {
   const [taskDescricao, setTaskDescricao] = useState('')
   const [taskResponsavelId, setTaskResponsavelId] = useState<string>('')
   const [savingTask, setSavingTask] = useState(false)
+  const [editingTaskId, setEditingTaskId] = useState<number | null>(null)
+  const [editTaskTitulo, setEditTaskTitulo] = useState('')
+  const [editTaskDescricao, setEditTaskDescricao] = useState('')
 
   const { appUser } = useAuth()
   const isFelipe = appUser?.role === 'felipe'
@@ -219,6 +224,53 @@ export function TicketDetailPage() {
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Erro ao alterar responsável.'
+      setError(message)
+    }
+  }
+
+  const handleEditTaskStart = (task: TicketTask) => {
+    setEditingTaskId(task.id)
+    setEditTaskTitulo(task.titulo)
+    setEditTaskDescricao(task.descricao ?? '')
+  }
+
+  const handleEditTaskSave = async (event: FormEvent) => {
+    event.preventDefault()
+    if (editingTaskId == null) return
+    try {
+      await updateTicketTask(editingTaskId, {
+        titulo: editTaskTitulo.trim(),
+        descricao: editTaskDescricao.trim() || null,
+      })
+      setTasks((prev) =>
+        prev.map((t) =>
+          t.id === editingTaskId
+            ? { ...t, titulo: editTaskTitulo.trim(), descricao: editTaskDescricao.trim() || null }
+            : t,
+        ),
+      )
+      setEditingTaskId(null)
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Erro ao salvar task.'
+      setError(message)
+    }
+  }
+
+  const handleEditTaskCancel = () => {
+    setEditingTaskId(null)
+    setEditTaskTitulo('')
+    setEditTaskDescricao('')
+  }
+
+  const handleDeleteTask = async (taskId: number) => {
+    if (!window.confirm('Excluir esta task? Esta ação não pode ser desfeita.')) return
+    try {
+      await deleteTicketTask(taskId)
+      setTasks((prev) => prev.filter((t) => t.id !== taskId))
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Erro ao excluir task.'
       setError(message)
     }
   }
@@ -817,72 +869,126 @@ export function TicketDetailPage() {
                 {tasks.map((task) => (
                   <div
                     key={task.id}
-                    className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2"
+                    className="rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2"
                   >
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-slate-800">{task.titulo}</p>
-                      {task.descricao && (
-                        <p className="mt-0.5 text-xs text-slate-500 line-clamp-2">
-                          {task.descricao}
-                        </p>
-                      )}
-                      <p className="mt-1 text-xs text-slate-400">
-                        {task.created_by_nome && (
-                          <>Criada por {task.created_by_nome} · </>
+                    {editingTaskId === task.id ? (
+                      <form onSubmit={handleEditTaskSave} className="space-y-2">
+                        <input
+                          value={editTaskTitulo}
+                          onChange={(e) => setEditTaskTitulo(e.target.value)}
+                          placeholder="Título"
+                          required
+                          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        />
+                        <textarea
+                          value={editTaskDescricao}
+                          onChange={(e) => setEditTaskDescricao(e.target.value)}
+                          placeholder="Descrição (opcional)"
+                          rows={2}
+                          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        />
+                        <div className="flex gap-2">
+                          <button
+                            type="submit"
+                            className="rounded-lg bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-600"
+                          >
+                            Salvar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleEditTaskCancel}
+                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <div className="flex flex-wrap items-center gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-slate-800">{task.titulo}</p>
+                          {task.descricao && (
+                            <p className="mt-0.5 text-xs text-slate-500 line-clamp-2">
+                              {task.descricao}
+                            </p>
+                          )}
+                          <p className="mt-1 text-xs text-slate-400">
+                            {task.created_by_nome && (
+                              <>Criada por {task.created_by_nome} · </>
+                            )}
+                            {new Date(task.created_at).toLocaleString()}
+                          </p>
+                        </div>
+                        {!ticket.excluida_em && (
+                          <select
+                            value={task.responsavel_id}
+                            onChange={(e) =>
+                              handleTaskResponsavelChange(
+                                task.id,
+                                e.target.value,
+                              )
+                            }
+                            className="shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                            title="Alterar responsável"
+                          >
+                            {appUsers.map((u) => (
+                              <option key={u.id} value={u.id}>
+                                {u.name}
+                              </option>
+                            ))}
+                          </select>
                         )}
-                        {new Date(task.created_at).toLocaleString()}
-                      </p>
-                    </div>
-                    {!ticket.excluida_em && (
-                      <select
-                        value={task.responsavel_id}
-                        onChange={(e) =>
-                          handleTaskResponsavelChange(
-                            task.id,
-                            e.target.value,
-                          )
-                        }
-                        className="shrink-0 rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                        title="Alterar responsável"
-                      >
-                        {appUsers.map((u) => (
-                          <option key={u.id} value={u.id}>
-                            {u.name}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                    {ticket.excluida_em && (
-                      <span className="text-xs text-slate-500 shrink-0">
-                        {task.responsavel_nome}
-                      </span>
-                    )}
-                    <span
-                      className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
-                        task.status === 'concluido'
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : task.status === 'em_producao'
-                            ? 'bg-violet-100 text-violet-800'
-                            : 'bg-amber-100 text-amber-800'
-                      }`}
-                    >
-                      {TASK_STATUS_LABELS[task.status]}
-                    </span>
-                    {!ticket.excluida_em && (
-                      <select
-                        value={task.status}
-                        onChange={(e) =>
-                          handleTaskStatusChange(
-                            task.id,
-                            e.target.value as TicketTaskStatus,
-                          )
-                        }
-                        className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                      >
-                        <option value="pendente">Pendente</option>
-                        <option value="em_producao">Em produção</option>
-                        <option value="concluido">Concluído</option>
-                      </select>
+                        {ticket.excluida_em && (
+                          <span className="text-xs text-slate-500 shrink-0">
+                            {task.responsavel_nome}
+                          </span>
+                        )}
+                        <span
+                          className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+                            task.status === 'concluido'
+                              ? 'bg-emerald-100 text-emerald-800'
+                              : task.status === 'em_producao'
+                                ? 'bg-violet-100 text-violet-800'
+                                : 'bg-amber-100 text-amber-800'
+                          }`}
+                        >
+                          {TASK_STATUS_LABELS[task.status]}
+                        </span>
+                        {!ticket.excluida_em && (
+                          <select
+                            value={task.status}
+                            onChange={(e) =>
+                              handleTaskStatusChange(
+                                task.id,
+                                e.target.value as TicketTaskStatus,
+                              )
+                            }
+                            className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                          >
+                            <option value="pendente">Pendente</option>
+                            <option value="em_producao">Em produção</option>
+                            <option value="concluido">Concluído</option>
+                          </select>
+                        )}
+                        {!ticket.excluida_em && (
+                          <div className="flex shrink-0 gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleEditTaskStart(task)}
+                              className="rounded border border-slate-300 bg-white px-2 py-1 text-xs text-slate-600 hover:bg-slate-50"
+                            >
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteTask(task.id)}
+                              className="rounded border border-rose-200 bg-rose-50 px-2 py-1 text-xs text-rose-700 hover:bg-rose-100"
+                            >
+                              Excluir
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     )}
                   </div>
                 ))}

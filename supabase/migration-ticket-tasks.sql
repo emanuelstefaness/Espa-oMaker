@@ -18,14 +18,22 @@ create index if not exists ticket_tasks_ticket_idx on public.ticket_tasks (ticke
 
 alter table public.ticket_tasks enable row level security;
 
+drop policy if exists "ticket_tasks_select_all" on public.ticket_tasks;
 create policy "ticket_tasks_select_all"
 on public.ticket_tasks for select using (true);
 
+drop policy if exists "ticket_tasks_insert_authenticated" on public.ticket_tasks;
 create policy "ticket_tasks_insert_authenticated"
 on public.ticket_tasks for insert
 with check (auth.uid() is not null);
 
+drop policy if exists "ticket_tasks_update_authenticated" on public.ticket_tasks;
 create policy "ticket_tasks_update_authenticated"
 on public.ticket_tasks for update
 using (auth.uid() is not null)
 with check (auth.uid() is not null);
+
+drop policy if exists "ticket_tasks_delete_authenticated" on public.ticket_tasks;
+create policy "ticket_tasks_delete_authenticated"
+on public.ticket_tasks for delete
+using (auth.uid() is not null);

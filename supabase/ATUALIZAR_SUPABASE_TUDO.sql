@@ -189,6 +189,11 @@ on public.ticket_tasks for update
 using (auth.uid() is not null)
 with check (auth.uid() is not null);
 
+drop policy if exists "ticket_tasks_delete_authenticated" on public.ticket_tasks;
+create policy "ticket_tasks_delete_authenticated"
+on public.ticket_tasks for delete
+using (auth.uid() is not null);
+
 -- =============================================================================
 -- FIM. Após executar, ative Realtime na tabela tickets se quiser dashboard
 -- em tempo real: Database → Replication → marque a tabela public.tickets.

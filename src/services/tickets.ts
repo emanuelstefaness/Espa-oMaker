@@ -741,6 +741,39 @@ export async function updateTicketTaskResponsavel(
   if (error) throw error
 }
 
+export interface UpdateTicketTaskInput {
+  titulo?: string
+  descricao?: string | null
+}
+
+/** Editar título e/ou descrição da task. */
+export async function updateTicketTask(
+  taskId: number,
+  input: UpdateTicketTaskInput,
+): Promise<void> {
+  const payload: Record<string, unknown> = {}
+  if (input.titulo !== undefined) payload.titulo = input.titulo
+  if (input.descricao !== undefined) payload.descricao = input.descricao
+  if (Object.keys(payload).length === 0) return
+
+  const { error } = await supabase
+    .from('ticket_tasks')
+    .update(payload)
+    .eq('id', taskId)
+
+  if (error) throw error
+}
+
+/** Excluir uma task. */
+export async function deleteTicketTask(taskId: number): Promise<void> {
+  const { error } = await supabase
+    .from('ticket_tasks')
+    .delete()
+    .eq('id', taskId)
+
+  if (error) throw error
+}
+
 export interface TicketFile {
   id: number
   ticket_id: string
