@@ -40,6 +40,7 @@ export function FeedPage() {
   const [ticketOptions, setTicketOptions] = useState<TicketOption[]>([])
   const [publishing, setPublishing] = useState(false)
   const [files, setFiles] = useState<File[]>([])
+  const [showNewPostModal, setShowNewPostModal] = useState(false)
 
   const loadPosts = () => {
     setLoading(true)
@@ -75,6 +76,7 @@ export function FeedPage() {
       setConteudo('')
       setTicketId('')
       setFiles([])
+      setShowNewPostModal(false)
       loadPosts()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao publicar.')
@@ -94,107 +96,148 @@ export function FeedPage() {
     setFiles((prev) => prev.filter((_, i) => i !== index))
   }
 
+  const closeModal = () => {
+    if (!publishing) setShowNewPostModal(false)
+  }
+
   return (
     <LayoutShell>
       <section className="mx-auto max-w-2xl space-y-6 pb-8">
-        <header>
-          <h1 className="text-2xl font-semibold text-slate-800">Feed interno</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Atualizações, bugs e ideias da equipe. Vincule demandas quando fizer sentido.
-          </p>
+        <header className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-semibold text-slate-800">Feed interno</h1>
+            <p className="mt-1 text-sm text-slate-500">
+              Atualizações, bugs e ideias da equipe. Vincule demandas quando fizer sentido.
+            </p>
+          </div>
+          {appUser && (
+            <button
+              type="button"
+              onClick={() => setShowNewPostModal(true)}
+              className="rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-600"
+            >
+              + Novo post
+            </button>
+          )}
         </header>
 
-        {appUser && (
-          <form
-            onSubmit={handleSubmit}
-            className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+        {showNewPostModal && appUser && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
           >
-            <h2 className="text-sm font-semibold text-slate-700">Novo post</h2>
-            <div className="mt-3 space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-500">
-                  Tipo
-                </label>
-                <select
-                  value={tipo}
-                  onChange={(e) => setTipo(e.target.value as FeedPostTipo)}
-                  className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+            <div
+              className="absolute inset-0 bg-black/50"
+              onClick={closeModal}
+              aria-hidden="true"
+            />
+            <div className="relative w-full max-w-md rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                <h2 id="modal-title" className="text-sm font-semibold text-slate-800">
+                  Novo post
+                </h2>
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                  aria-label="Fechar"
                 >
-                  <option value="atualizacao">Atualização</option>
-                  <option value="bug">Bug</option>
-                  <option value="ideia">Ideia</option>
-                </select>
+                  ✕
+                </button>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500">
-                  Conteúdo
-                </label>
-                <textarea
-                  value={conteudo}
-                  onChange={(e) => setConteudo(e.target.value)}
-                  placeholder="Escreva algo para a equipe..."
-                  rows={3}
-                  required
-                  className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500">
-                  Vincular demanda (opcional)
-                </label>
-                <select
-                  value={ticketId}
-                  onChange={(e) => setTicketId(e.target.value)}
-                  className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
-                >
-                  <option value="">Selecionar demanda</option>
-                  {ticketOptions.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.codigo ? `${t.codigo} – ` : ''}{t.titulo}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-500">
-                  Anexar arquivos
-                </label>
-                <input
-                  type="file"
-                  multiple
-                  onChange={addFiles}
-                  className="mt-0.5 block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-slate-700"
-                />
-                {files.length > 0 && (
-                  <ul className="mt-1 flex flex-wrap gap-2">
-                    {files.map((f, i) => (
-                      <li
-                        key={i}
-                        className="flex items-center gap-1 rounded bg-slate-100 px-2 py-1 text-xs text-slate-700"
-                      >
-                        {f.name}
-                        <button
-                          type="button"
-                          onClick={() => removeFile(i)}
-                          className="text-slate-500 hover:text-rose-600"
-                          aria-label="Remover"
-                        >
-                          ×
-                        </button>
-                      </li>
+              <form onSubmit={handleSubmit} className="mt-3 space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-slate-500">Tipo</label>
+                  <select
+                    value={tipo}
+                    onChange={(e) => setTipo(e.target.value as FeedPostTipo)}
+                    className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  >
+                    <option value="atualizacao">Atualização</option>
+                    <option value="bug">Bug</option>
+                    <option value="ideia">Ideia</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500">Conteúdo</label>
+                  <textarea
+                    value={conteudo}
+                    onChange={(e) => setConteudo(e.target.value)}
+                    placeholder="Escreva algo para a equipe..."
+                    rows={3}
+                    required
+                    className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500">
+                    Vincular demanda (opcional)
+                  </label>
+                  <select
+                    value={ticketId}
+                    onChange={(e) => setTicketId(e.target.value)}
+                    className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  >
+                    <option value="">Selecionar demanda</option>
+                    {ticketOptions.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.codigo ? `${t.codigo} – ` : ''}{t.titulo}
+                      </option>
                     ))}
-                  </ul>
-                )}
-              </div>
-              <button
-                type="submit"
-                disabled={publishing || !conteudo.trim()}
-                className="w-full rounded-lg bg-blue-500 py-2.5 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
-              >
-                {publishing ? 'Publicando...' : 'Publicar'}
-              </button>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-500">
+                    Anexar arquivos
+                  </label>
+                  <input
+                    type="file"
+                    multiple
+                    onChange={addFiles}
+                    className="mt-0.5 block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-slate-700"
+                  />
+                  {files.length > 0 && (
+                    <ul className="mt-1 flex flex-wrap gap-2">
+                      {files.map((f, i) => (
+                        <li
+                          key={i}
+                          className="flex items-center gap-1 rounded bg-slate-100 px-2 py-1 text-xs text-slate-700"
+                        >
+                          {f.name}
+                          <button
+                            type="button"
+                            onClick={() => removeFile(i)}
+                            className="text-slate-500 hover:text-rose-600"
+                            aria-label="Remover"
+                          >
+                            ×
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <div className="flex gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={closeModal}
+                    className="flex-1 rounded-lg border border-slate-300 bg-white py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={publishing || !conteudo.trim()}
+                    className="flex-1 rounded-lg bg-blue-500 py-2.5 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
+                  >
+                    {publishing ? 'Publicando...' : 'Publicar'}
+                  </button>
+                </div>
+              </form>
             </div>
-          </form>
+          </div>
         )}
 
         {error && (
