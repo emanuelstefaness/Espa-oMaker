@@ -18,7 +18,7 @@ export function DashboardPage() {
       try {
         const { tickets: data } = await listTickets(
           { includeCancelada: true },
-          { limit: 200 },
+          { limit: 200, orderBy: 'data_entrega', orderDirection: 'asc' },
         )
         setTickets(data)
       } catch {
@@ -30,7 +30,10 @@ export function DashboardPage() {
     load()
 
     const interval = setInterval(() => {
-      listTickets({ includeCancelada: true }, { limit: 200 })
+      listTickets(
+          { includeCancelada: true },
+          { limit: 200, orderBy: 'data_entrega', orderDirection: 'asc' },
+        )
         .then(({ tickets: data }) => setTickets(data))
         .catch(() => {})
     }, POLL_INTERVAL_MS)

@@ -18,8 +18,16 @@ import {
   uploadTicketFile,
   getTicket,
   setTicketExcluida,
+  listTicketTasks,
+  createTicketTask,
+  updateTicketTaskStatus,
 } from '../services/tickets'
-import type { TicketComment, TicketFile } from '../services/tickets'
+import type {
+  TicketComment,
+  TicketFile,
+  TicketTask,
+  TicketTaskStatus,
+} from '../services/tickets'
 import { useAuth } from '../auth/AuthContext'
 import { CATEGORIAS } from '../constants/ticketOptions'
 import { CategorySelect } from '../components/CategorySelect'
@@ -50,6 +58,12 @@ export function TicketDetailPage() {
 
   const [files, setFiles] = useState<TicketFile[]>([])
   const [uploading, setUploading] = useState(false)
+
+  const [tasks, setTasks] = useState<TicketTask[]>([])
+  const [showNewTaskForm, setShowNewTaskForm] = useState(false)
+  const [taskTitulo, setTaskTitulo] = useState('')
+  const [taskDescricao, setTaskDescricao] = useState('')
+  const [savingTask, setSavingTask] = useState(false)
 
   const { appUser } = useAuth()
   const isFelipe = appUser?.role === 'felipe'
@@ -90,12 +104,14 @@ export function TicketDetailPage() {
           return
         }
         setTicket(data)
-        const [c, f] = await Promise.all([
+        const [c, f, t] = await Promise.all([
           listComments(id),
           listTicketFiles(id),
+          listTicketTasks(id),
         ])
         setComments(c)
         setFiles(f)
+        setTasks(t)
       } catch (err) {
         const message =
           err instanceof Error ? err.message : 'Erro ao carregar demanda.'
@@ -135,6 +151,48 @@ export function TicketDetailPage() {
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Erro ao enviar comentário.'
+      setError(message)
+    }
+  }
+
+  const TASK_STATUS_LABELS: Record<TicketTaskStatus, string> = {
+    pendente: 'Pendente',
+    em_producao: 'Em produção',
+    concluido: 'Concluído',
+  }
+
+  const handleCreateTask = async (event: FormEvent) => {
+    event.preventDefault()
+    if (!id || !appUser || !taskTitulo.trim()) return
+    setSavingTask(true)
+    try {
+      const newTask = await createTicketTask(id, {
+        titulo: taskTitulo.trim(),
+        descricao: taskDescricao.trim() || null,
+        responsavel_id: appUser.id,
+      })
+      setTasks((prev) => [...prev, newTask])
+      setTaskTitulo('')
+      setTaskDescricao('')
+      setShowNewTaskForm(false)
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Erro ao criar task.'
+      setError(message)
+    } finally {
+      setSavingTask(false)
+    }
+  }
+
+  const handleTaskStatusChange = async (taskId: number, status: TicketTaskStatus) => {
+    try {
+      await updateTicketTaskStatus(taskId, status)
+      setTasks((prev) =>
+        prev.map((t) => (t.id === taskId ? { ...t, status } : t)),
+      )
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Erro ao atualizar status.'
       setError(message)
     }
   }
@@ -653,6 +711,121 @@ export function TicketDetailPage() {
                   Enviar
                 </button>
               </form>
+            </div>
+
+            <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-2">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Tasks da Demanda
+                </p>
+                {!ticket.excluida_em && appUser && (
+                  <button
+                    type="button"
+                    onClick={() => setShowNewTaskForm((v) => !v)}
+                    className="rounded-lg bg-emerald-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-600"
+                  >
+                    + Nova Task
+                  </button>
+                )}
+              </div>
+              {showNewTaskForm && appUser && (
+                <form
+                  onSubmit={handleCreateTask}
+                  className="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 space-y-2"
+                >
+                  <input
+                    value={taskTitulo}
+                    onChange={(e) => setTaskTitulo(e.target.value)}
+                    placeholder="Título da task"
+                    required
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  />
+                  <textarea
+                    value={taskDescricao}
+                    onChange={(e) => setTaskDescricao(e.target.value)}
+                    placeholder="Descrição (opcional)"
+                    rows={2}
+                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  />
+                  <p className="text-xs text-slate-500">
+                    Responsável: você ({appUser.name})
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      type="submit"
+                      disabled={savingTask}
+                      className="rounded-lg bg-emerald-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-50"
+                    >
+                      {savingTask ? 'Salvando…' : 'Criar task'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowNewTaskForm(false)
+                        setTaskTitulo('')
+                        setTaskDescricao('')
+                      }}
+                      className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </form>
+              )}
+              <div className="mt-3 space-y-2 max-h-64 overflow-y-auto">
+                {tasks.map((task) => (
+                  <div
+                    key={task.id}
+                    className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-100 bg-slate-50/80 px-3 py-2"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-slate-800">{task.titulo}</p>
+                      {task.descricao && (
+                        <p className="mt-0.5 text-xs text-slate-500 line-clamp-2">
+                          {task.descricao}
+                        </p>
+                      )}
+                      <p className="mt-1 text-xs text-slate-400">
+                        Responsável: {task.responsavel_nome}
+                        {task.created_by_nome && (
+                          <> · Criada por {task.created_by_nome}</>
+                        )}{' '}
+                        · {new Date(task.created_at).toLocaleString()}
+                      </p>
+                    </div>
+                    <span
+                      className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-medium ${
+                        task.status === 'concluido'
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : task.status === 'em_producao'
+                            ? 'bg-violet-100 text-violet-800'
+                            : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
+                      {TASK_STATUS_LABELS[task.status]}
+                    </span>
+                    {!ticket.excluida_em && (
+                      <select
+                        value={task.status}
+                        onChange={(e) =>
+                          handleTaskStatusChange(
+                            task.id,
+                            e.target.value as TicketTaskStatus,
+                          )
+                        }
+                        className="rounded-lg border border-slate-300 bg-white px-2 py-1 text-xs text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                      >
+                        <option value="pendente">Pendente</option>
+                        <option value="em_producao">Em produção</option>
+                        <option value="concluido">Concluído</option>
+                      </select>
+                    )}
+                  </div>
+                ))}
+                {tasks.length === 0 && !showNewTaskForm && (
+                  <p className="text-sm text-slate-500">Nenhuma task ainda.</p>
+                )}
+              </div>
             </div>
           </div>
 

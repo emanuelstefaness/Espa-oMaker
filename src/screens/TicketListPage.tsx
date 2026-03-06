@@ -77,10 +77,12 @@ export function TicketListPage() {
         setError(null)
       }
       const offset = isInitial ? 0 : pageOffset ?? 0
-      const { tickets: data, hasMore: more } = await listTickets(
-        mergedFilters,
-        { limit: PAGE_SIZE, offset },
-      )
+      const { tickets: data, hasMore: more } = await listTickets(mergedFilters, {
+        limit: PAGE_SIZE,
+        offset,
+        orderBy: 'data_entrega',
+        orderDirection: 'asc',
+      })
       const list = data ?? []
       const exibirLista =
         mergedFilters.status === 'cancelada' || mergedFilters.statusIn

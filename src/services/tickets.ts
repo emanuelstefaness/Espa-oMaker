@@ -33,6 +33,9 @@ export interface TicketFilters {
 export interface ListTicketsOptions {
   limit?: number
   offset?: number
+  /** Ordenar por prazo (data_entrega): mais próximo primeiro. Padrão data_criacao desc. */
+  orderBy?: 'data_criacao' | 'data_entrega'
+  orderDirection?: 'asc' | 'desc'
 }
 
 export interface ListTicketsResult {
@@ -157,9 +160,20 @@ export async function listTickets(
     )
   }
 
-  const { data, error } = await query
-    .order('data_criacao', { ascending: false })
-    .range(offset, offset + fetchSize - 1)
+  const orderBy = options.orderBy ?? 'data_criacao'
+  const orderDir = options.orderDirection ?? (orderBy === 'data_entrega' ? 'asc' : 'desc')
+  const ascending = orderDir === 'asc'
+
+  if (orderBy === 'data_entrega') {
+    query = query.order('data_entrega', {
+      ascending,
+      nullsFirst: !ascending,
+    })
+  } else {
+    query = query.order('data_criacao', { ascending: false })
+  }
+
+  const { data, error } = await query.range(offset, offset + fetchSize - 1)
 
   if (error) {
     throw error
@@ -538,6 +552,131 @@ export async function addComment(
   const { error } = await supabase
     .from('ticket_comments')
     .insert({ ticket_id: ticketId, body })
+
+  if (error) throw error
+}
+
+// --- Tasks da demanda ---
+
+export type TicketTaskStatus = 'pendente' | 'em_producao' | 'concluido'
+
+export interface TicketTask {
+  id: number
+  ticket_id: string
+  titulo: string
+  descricao: string | null
+  responsavel_id: string
+  responsavel_nome: string
+  created_by: string | null
+  created_by_nome: string | null
+  created_at: string
+  status: TicketTaskStatus
+}
+
+export async function listTicketTasks(ticketId: string): Promise<TicketTask[]> {
+  const { data, error } = await supabase
+    .from('ticket_tasks')
+    .select(
+      `
+        id,
+        ticket_id,
+        titulo,
+        descricao,
+        responsavel_id,
+        created_by,
+        created_at,
+        status,
+        responsavel:responsavel_id ( id, name ),
+        creator:created_by ( id, name )
+      `,
+    )
+    .eq('ticket_id', ticketId)
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+
+  return (
+    data?.map((row: any) => ({
+      id: row.id,
+      ticket_id: row.ticket_id,
+      titulo: row.titulo,
+      descricao: row.descricao ?? null,
+      responsavel_id: row.responsavel_id,
+      responsavel_nome: row.responsavel?.name ?? '—',
+      created_by: row.created_by ?? null,
+      created_by_nome: row.creator?.name ?? null,
+      created_at: row.created_at,
+      status: row.status,
+    })) ?? []
+  )
+}
+
+export interface CreateTicketTaskInput {
+  titulo: string
+  descricao?: string | null
+  responsavel_id: string
+}
+
+export async function createTicketTask(
+  ticketId: string,
+  input: CreateTicketTaskInput,
+): Promise<TicketTask> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error('Faça login para criar tasks.')
+
+  const { data, error } = await supabase
+    .from('ticket_tasks')
+    .insert({
+      ticket_id: ticketId,
+      titulo: input.titulo,
+      descricao: input.descricao ?? null,
+      responsavel_id: input.responsavel_id,
+      created_by: user.id,
+      status: 'pendente',
+    })
+    .select(
+      `
+        id,
+        ticket_id,
+        titulo,
+        descricao,
+        responsavel_id,
+        created_by,
+        created_at,
+        status,
+        responsavel:responsavel_id ( id, name ),
+        creator:created_by ( id, name )
+      `,
+    )
+    .single()
+
+  if (error) throw error
+
+  const row = data as any
+  return {
+    id: row.id,
+    ticket_id: row.ticket_id,
+    titulo: row.titulo,
+    descricao: row.descricao ?? null,
+    responsavel_id: row.responsavel_id,
+    responsavel_nome: row.responsavel?.name ?? '—',
+    created_by: row.created_by ?? null,
+    created_by_nome: row.creator?.name ?? null,
+    created_at: row.created_at,
+    status: row.status,
+  }
+}
+
+export async function updateTicketTaskStatus(
+  taskId: number,
+  status: TicketTaskStatus,
+): Promise<void> {
+  const { error } = await supabase
+    .from('ticket_tasks')
+    .update({ status })
+    .eq('id', taskId)
 
   if (error) throw error
 }

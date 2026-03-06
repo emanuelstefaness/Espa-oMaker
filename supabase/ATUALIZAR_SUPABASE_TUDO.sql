@@ -156,6 +156,39 @@ add column if not exists excluida_em timestamptz;
 
 comment on column public.tickets.excluida_em is 'Quando preenchido, a demanda foi excluída e não aparece nas listas.';
 
+/* 9. TASKS DA DEMANDA (subtarefas por ticket) */
+create table if not exists public.ticket_tasks (
+  id bigserial primary key,
+  ticket_id uuid not null references public.tickets (id) on delete cascade,
+  titulo text not null,
+  descricao text,
+  responsavel_id uuid not null references public.app_users (id),
+  created_by uuid references public.app_users (id),
+  created_at timestamptz not null default now(),
+  status text not null check (status in ('pendente', 'em_producao', 'concluido')) default 'pendente'
+);
+
+comment on table public.ticket_tasks is 'Tasks (subtarefas) de cada demanda.';
+
+create index if not exists ticket_tasks_ticket_idx on public.ticket_tasks (ticket_id);
+
+alter table public.ticket_tasks enable row level security;
+
+drop policy if exists "ticket_tasks_select_all" on public.ticket_tasks;
+create policy "ticket_tasks_select_all"
+on public.ticket_tasks for select using (true);
+
+drop policy if exists "ticket_tasks_insert_authenticated" on public.ticket_tasks;
+create policy "ticket_tasks_insert_authenticated"
+on public.ticket_tasks for insert
+with check (auth.uid() is not null);
+
+drop policy if exists "ticket_tasks_update_authenticated" on public.ticket_tasks;
+create policy "ticket_tasks_update_authenticated"
+on public.ticket_tasks for update
+using (auth.uid() is not null)
+with check (auth.uid() is not null);
+
 -- =============================================================================
 -- FIM. Após executar, ative Realtime na tabela tickets se quiser dashboard
 -- em tempo real: Database → Replication → marque a tabela public.tickets.
