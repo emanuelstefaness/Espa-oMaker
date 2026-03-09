@@ -8,7 +8,6 @@ interface ReportsData {
   receitaTotalExternas: number
   custoTotal: number
   receitaLiquida: number
-  tempoMedioEntregaDias: number | null
 }
 
 const COLS_RELATORIO = [
@@ -164,7 +163,7 @@ export function ReportsPage() {
         )}
 
         {data && !loading && !error && (
-          <div className="grid gap-4 lg:grid-cols-3">
+          <>
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Demandas por responsável (7 dias)
@@ -189,56 +188,41 @@ export function ReportsPage() {
               </ul>
             </div>
 
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wider text-emerald-800">
-                Receita geral
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-slate-700">
+                Resumo financeiro
+              </h2>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Período filtrado · demandas externas com orçamento aprovado ou mais
               </p>
-              <p className="mt-2 text-2xl font-semibold text-emerald-800">
-                R$ {data.receitaTotalExternas.toFixed(2)}
-              </p>
-              <p className="mt-1 text-xs text-emerald-700">
-                Externas com orçamento aprovado ou mais (período filtrado).
-              </p>
+              <div className="mt-4 grid gap-4 sm:grid-cols-3">
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50/80 p-4">
+                  <p className="text-xs font-medium uppercase tracking-wider text-emerald-700">
+                    Receita geral
+                  </p>
+                  <p className="mt-1 text-xl font-semibold text-emerald-800">
+                    R$ {data.receitaTotalExternas.toFixed(2)}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-amber-200 bg-amber-50/80 p-4">
+                  <p className="text-xs font-medium uppercase tracking-wider text-amber-700">
+                    Custo geral
+                  </p>
+                  <p className="mt-1 text-xl font-semibold text-amber-800">
+                    R$ {data.custoTotal.toFixed(2)}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-blue-200 bg-blue-50/80 p-4">
+                  <p className="text-xs font-medium uppercase tracking-wider text-blue-700">
+                    Receita líquida
+                  </p>
+                  <p className="mt-1 text-xl font-semibold text-blue-800">
+                    R$ {data.receitaLiquida.toFixed(2)}
+                  </p>
+                </div>
+              </div>
             </div>
-
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wider text-amber-800">
-                Custo geral
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-amber-800">
-                R$ {data.custoTotal.toFixed(2)}
-              </p>
-              <p className="mt-1 text-xs text-amber-700">
-                Soma dos custos das mesmas demandas (período filtrado).
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wider text-blue-800">
-                Receita líquida
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-blue-800">
-                R$ {data.receitaLiquida.toFixed(2)}
-              </p>
-              <p className="mt-1 text-xs text-blue-700">
-                Receita geral menos custo geral.
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-700">
-                Tempo médio até entrega
-              </p>
-              <p className="mt-2 text-2xl font-semibold text-slate-800">
-                {data.tempoMedioEntregaDias !== null
-                  ? `${data.tempoMedioEntregaDias.toFixed(1)} dias`
-                  : '—'}
-              </p>
-              <p className="mt-1 text-xs text-slate-600">
-                Demandas entregues com data preenchida.
-              </p>
-            </div>
-          </div>
+          </>
         )}
 
         {/* Relatório de demandas (tabela + exportação) */}
@@ -417,25 +401,11 @@ function buildReports(tickets: Ticket[]): ReportsData {
   )
   const receitaLiquida = receitaTotalExternas - custoTotal
 
-  const entregues = tickets.filter(
-    (t) => t.status === 'entregue' && t.data_entrega,
-  )
-  let tempoMedioEntregaDias: number | null = null
-  if (entregues.length > 0) {
-    const somaDias = entregues.reduce((acc, t) => {
-      const start = new Date(t.data_criacao).getTime()
-      const end = new Date(t.data_entrega as string).getTime()
-      return acc + (end - start) / (1000 * 60 * 60 * 24)
-    }, 0)
-    tempoMedioEntregaDias = somaDias / entregues.length
-  }
-
   return {
     totalPorResponsavelSemana,
     receitaTotalExternas,
     custoTotal,
     receitaLiquida,
-    tempoMedioEntregaDias,
   }
 }
 
