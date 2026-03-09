@@ -128,6 +128,18 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
             </NavLink>
           )}
           <NavLink
+            to="/agenda"
+            className={({ isActive }) =>
+              `rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                isActive
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+              }`
+            }
+          >
+            Agenda
+          </NavLink>
+          <NavLink
             to="/feed"
             className={({ isActive }) =>
               `rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
