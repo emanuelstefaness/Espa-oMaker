@@ -6,6 +6,8 @@ import { listTickets } from '../services/tickets'
 interface ReportsData {
   totalPorResponsavelSemana: { responsavel: string; total: number }[]
   receitaTotalExternas: number
+  custoTotal: number
+  receitaLiquida: number
   tempoMedioEntregaDias: number | null
 }
 
@@ -18,6 +20,7 @@ const COLS_RELATORIO = [
   'COR',
   'QUANTIDADE TOTAL',
   'VALOR DO PRODUTO',
+  'CUSTO',
   'PRAZO DE ENTREGA',
 ] as const
 
@@ -25,6 +28,13 @@ function ticketToRow(t: Ticket): string[] {
   const valor =
     t.valor_demanda != null
       ? Number(t.valor_demanda).toLocaleString('pt-BR', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })
+      : ''
+  const custoStr =
+    t.custo != null
+      ? Number(t.custo).toLocaleString('pt-BR', {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         })
@@ -38,6 +48,7 @@ function ticketToRow(t: Ticket): string[] {
     t.impressao3d?.cor ?? '',
     String(t.impressao3d?.quantidade_pecas ?? ''),
     valor,
+    custoStr,
     t.data_entrega ?? '',
   ]
 }
@@ -180,26 +191,50 @@ export function ReportsPage() {
 
             <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-wider text-emerald-800">
-                Receita (externas aprovadas)
+                Receita geral
               </p>
               <p className="mt-2 text-2xl font-semibold text-emerald-800">
                 R$ {data.receitaTotalExternas.toFixed(2)}
               </p>
               <p className="mt-1 text-xs text-emerald-700">
-                Orçamentos aprovados, demandas externas.
+                Externas com orçamento aprovado ou mais (período filtrado).
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-wider text-amber-800">
+                Custo geral
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-amber-800">
+                R$ {data.custoTotal.toFixed(2)}
+              </p>
+              <p className="mt-1 text-xs text-amber-700">
+                Soma dos custos das mesmas demandas (período filtrado).
               </p>
             </div>
 
             <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-wider text-blue-800">
-                Tempo médio até entrega
+                Receita líquida
               </p>
               <p className="mt-2 text-2xl font-semibold text-blue-800">
+                R$ {data.receitaLiquida.toFixed(2)}
+              </p>
+              <p className="mt-1 text-xs text-blue-700">
+                Receita geral menos custo geral.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-700">
+                Tempo médio até entrega
+              </p>
+              <p className="mt-2 text-2xl font-semibold text-slate-800">
                 {data.tempoMedioEntregaDias !== null
                   ? `${data.tempoMedioEntregaDias.toFixed(1)} dias`
                   : '—'}
               </p>
-              <p className="mt-1 text-xs text-blue-700">
+              <p className="mt-1 text-xs text-slate-600">
                 Demandas entregues com data preenchida.
               </p>
             </div>
@@ -367,17 +402,20 @@ function buildReports(tickets: Ticket[]): ReportsData {
     'pronta',
     'entregue',
   ] as const
-  const receitaTotalExternas = tickets
-    .filter(
-      (t) =>
-        t.tipo === 'externa' &&
-        statusAprovadoOuApos.includes(t.status as (typeof statusAprovadoOuApos)[number]),
-    )
-    .reduce(
-      (sum, t) =>
-        sum + (t.valor_demanda ?? t.orcamento?.total ?? 0),
-      0,
-    )
+  const demandasAprovadasOuApos = tickets.filter(
+    (t) =>
+      t.tipo === 'externa' &&
+      statusAprovadoOuApos.includes(t.status as (typeof statusAprovadoOuApos)[number]),
+  )
+  const receitaTotalExternas = demandasAprovadasOuApos.reduce(
+    (sum, t) => sum + (t.valor_demanda ?? t.orcamento?.total ?? 0),
+    0,
+  )
+  const custoTotal = demandasAprovadasOuApos.reduce(
+    (sum, t) => sum + (t.custo ?? 0),
+    0,
+  )
+  const receitaLiquida = receitaTotalExternas - custoTotal
 
   const entregues = tickets.filter(
     (t) => t.status === 'entregue' && t.data_entrega,
@@ -395,6 +433,8 @@ function buildReports(tickets: Ticket[]): ReportsData {
   return {
     totalPorResponsavelSemana,
     receitaTotalExternas,
+    custoTotal,
+    receitaLiquida,
     tempoMedioEntregaDias,
   }
 }

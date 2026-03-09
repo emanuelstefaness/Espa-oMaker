@@ -28,6 +28,8 @@ export function NewTicketPage() {
   const [categoria, setCategoria] = useState<TicketCategoria>('servicos_3d')
   const [prioridade, setPrioridade] = useState<TicketPrioridade>('media')
   const [dataEntrega, setDataEntrega] = useState('')
+  const [valorDemanda, setValorDemanda] = useState<number | ''>('')
+  const [custo, setCusto] = useState<number | ''>('')
 
   const [material, setMaterial] = useState('PLA')
   const [cor, setCor] = useState('')
@@ -75,6 +77,8 @@ export function NewTicketPage() {
         categoria,
         prioridade,
         data_entrega: dataEntrega || undefined,
+        valor_demanda: valorDemanda !== '' ? Number(valorDemanda) : undefined,
+        custo: custo !== '' ? Number(custo) : undefined,
         material_impressao:
           categoria === 'servicos_3d' ? material : undefined,
         cor: categoria === 'servicos_3d' ? cor || undefined : undefined,
@@ -218,6 +222,41 @@ export function NewTicketPage() {
                 value={dataEntrega}
                 onChange={(e) => setDataEntrega(e.target.value)}
                 className={inputClass}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <label className={labelClass}>Valor receita (R$)</label>
+              <input
+                type="number"
+                min={0}
+                step={0.01}
+                value={valorDemanda === '' ? '' : valorDemanda}
+                onChange={(e) =>
+                  setValorDemanda(
+                    e.target.value === '' ? '' : Number(e.target.value),
+                  )
+                }
+                className={inputClass}
+                placeholder="0,00"
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Custo (R$)</label>
+              <input
+                type="number"
+                min={0}
+                step={0.01}
+                value={custo === '' ? '' : custo}
+                onChange={(e) =>
+                  setCusto(
+                    e.target.value === '' ? '' : Number(e.target.value),
+                  )
+                }
+                className={inputClass}
+                placeholder="0,00"
               />
             </div>
           </div>

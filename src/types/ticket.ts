@@ -69,6 +69,8 @@ export interface Ticket {
   data_entrega?: string | null
   atraso?: boolean
   valor_demanda?: number | null
+  /** Custo da demanda (para relatório de despesas e receita líquida) */
+  custo?: number | null
   nivel_dificuldade?: NivelDificuldade | null
   impressao3d?: TicketImpressao3D | null
   orcamento?: TicketOrcamento | null

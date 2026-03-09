@@ -99,6 +99,7 @@ export function TicketDetailPage() {
     tamanho_escala: '',
     observacoes_tecnicas: '',
     valor_demanda: '' as number | '',
+    custo: '' as number | '',
   })
 
   useEffect(() => {
@@ -318,6 +319,7 @@ export function TicketDetailPage() {
       observacoes_tecnicas:
         ticket.impressao3d?.observacoes_tecnicas ?? '',
       valor_demanda: ticket.valor_demanda ?? ('' as number | ''),
+      custo: ticket.custo ?? ('' as number | ''),
     })
     setEditingDados(true)
   }
@@ -360,6 +362,8 @@ export function TicketDetailPage() {
           formDados.valor_demanda !== ''
             ? Number(formDados.valor_demanda)
             : null,
+        custo:
+          formDados.custo !== '' ? Number(formDados.custo) : null,
       })
       setTicket(updated)
       setEditingDados(false)
@@ -585,6 +589,28 @@ export function TicketDetailPage() {
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-slate-600">
+                      Custo (R$)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={formDados.custo === '' ? '' : formDados.custo}
+                      onChange={(e) =>
+                        setFormDados((p) => ({
+                          ...p,
+                          custo:
+                            e.target.value === ''
+                              ? ('' as number | '')
+                              : Number(e.target.value),
+                        }))
+                      }
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      placeholder="0,00"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-slate-600">
                       Descrição
                     </label>
                     <textarea
@@ -715,6 +741,11 @@ export function TicketDetailPage() {
                     <Field label="Valor da demanda">
                       {ticket.valor_demanda != null
                         ? `R$ ${Number(ticket.valor_demanda).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+                        : '—'}
+                    </Field>
+                    <Field label="Custo">
+                      {ticket.custo != null
+                        ? `R$ ${Number(ticket.custo).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
                         : '—'}
                     </Field>
                     <Field label="Criada em">{ticket.data_criacao}</Field>

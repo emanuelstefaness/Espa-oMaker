@@ -87,6 +87,7 @@ export async function listTickets(
       status_orcamento,
       sem_cobranca,
       valor_demanda,
+      custo,
       nivel_dificuldade,
       excluida_em,
       responsavel:responsavel_id ( id, name, avatar_url )
@@ -217,13 +218,14 @@ export async function getTicket(id: string): Promise<Ticket | null> {
         total_orcamento,
         desconto,
         observacoes_orcamento,
-        status_orcamento,
-        sem_cobranca,
-        valor_demanda,
-        nivel_dificuldade,
-        excluida_em,
-        responsavel:responsavel_id ( id, name, avatar_url )
-      `,
+  status_orcamento,
+  sem_cobranca,
+  valor_demanda,
+  custo,
+  nivel_dificuldade,
+  excluida_em,
+  responsavel:responsavel_id ( id, name, avatar_url )
+  `,
     )
     .eq('id', id)
     .single()
@@ -265,6 +267,7 @@ export interface CreateTicketInput {
   prioridade: TicketPrioridade
   data_entrega?: string
   valor_demanda?: number | null
+  custo?: number | null
   material_impressao?: string
   cor?: string
   quantidade_pecas?: number
@@ -292,6 +295,7 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
       prioridade: input.prioridade,
       data_entrega: input.data_entrega ?? null,
       valor_demanda: input.valor_demanda ?? null,
+      custo: input.custo ?? null,
       material_impressao: input.material_impressao ?? null,
       cor: input.cor ?? null,
       quantidade_pecas: input.quantidade_pecas ?? null,
@@ -387,12 +391,13 @@ export interface UpdateTicketDadosInput {
   categoria?: TicketCategoria
   prioridade?: TicketPrioridade
   data_entrega?: string | null
+  valor_demanda?: number | null
+  custo?: number | null
   material_impressao?: string | null
   cor?: string | null
   quantidade_pecas?: number | null
   tamanho_escala?: string | null
   observacoes_tecnicas?: string | null
-  valor_demanda?: number | null
   nivel_dificuldade?: import('../types/ticket').NivelDificuldade | null
 }
 
@@ -422,6 +427,7 @@ export async function updateTicketDados(
     updatePayload.observacoes_tecnicas = payload.observacoes_tecnicas
   if (payload.valor_demanda !== undefined)
     updatePayload.valor_demanda = payload.valor_demanda
+  if (payload.custo !== undefined) updatePayload.custo = payload.custo
   if (payload.nivel_dificuldade !== undefined)
     updatePayload.nivel_dificuldade = payload.nivel_dificuldade
 
@@ -1061,6 +1067,7 @@ function mapRowToTicket(row: any): Ticket {
     data_criacao: row.data_criacao,
     data_entrega: row.data_entrega ?? null,
     valor_demanda: row.valor_demanda != null ? Number(row.valor_demanda) : null,
+    custo: row.custo != null ? Number(row.custo) : null,
     nivel_dificuldade: row.nivel_dificuldade ?? null,
     impressao3d,
     orcamento: orcamento ?? null,
