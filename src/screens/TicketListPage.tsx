@@ -16,6 +16,8 @@ import {
   listTasksByResponsavel,
 } from '../services/tickets'
 import type { TicketTaskWithDemanda } from '../services/tickets'
+import { listAppUsers } from '../services/appUsers'
+import type { AppUserOption } from '../services/appUsers'
 import { useAuth } from '../auth/AuthContext'
 import { getTicketCardClasses } from '../constants/ticketOptions'
 
@@ -46,6 +48,8 @@ export function TicketListPage() {
   const [tipo, setTipo] = useState<TicketTipo | ''>('')
   const [dataInicial, setDataInicial] = useState('')
   const [dataFinal, setDataFinal] = useState('')
+  const [responsavelId, setResponsavelId] = useState('')
+  const [appUsers, setAppUsers] = useState<AppUserOption[]>([])
   const location = useLocation()
   const { appUser } = useAuth()
   const isMinhasDemandas = location.pathname === '/demandas/minhas'
@@ -65,6 +69,7 @@ export function TicketListPage() {
     tipo: tipo || undefined,
     dataInicial: dataInicial || undefined,
     dataFinal: dataFinal || undefined,
+    responsavelId: responsavelId || undefined,
   }
 
   const load = async (
@@ -72,6 +77,7 @@ export function TicketListPage() {
     overrides?: Partial<typeof filters> & {
       statusIn?: TicketStatus[]
       responsavelOuColaboradorId?: string
+      responsavelId?: string
     },
   ) => {
     const isInitial = pageOffset === undefined || pageOffset === 0
@@ -122,6 +128,12 @@ export function TicketListPage() {
   }
 
   useEffect(() => {
+    if (!isMinhasDemandas) {
+      listAppUsers().then(setAppUsers).catch(() => setAppUsers([]))
+    }
+  }, [isMinhasDemandas])
+
+  useEffect(() => {
     if (isMinhasDemandas) {
       load(0)
       if (appUser?.id) {
@@ -159,6 +171,7 @@ export function TicketListPage() {
     setTipo('')
     setDataInicial('')
     setDataFinal('')
+    setResponsavelId('')
     setTimeout(() => load(0), 0)
   }
 
@@ -247,6 +260,20 @@ export function TicketListPage() {
             <option value="interna">Interna</option>
             <option value="externa">Externa</option>
           </select>
+          {!isMinhasDemandas && (
+            <select
+              value={responsavelId}
+              onChange={(e) => setResponsavelId(e.target.value)}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+            >
+              <option value="">Todos os responsáveis</option>
+              {appUsers.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+          )}
           <button
             type="submit"
             className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
