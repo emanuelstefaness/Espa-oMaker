@@ -40,6 +40,17 @@ export interface TicketOption {
   codigo: string | null
 }
 
+/** Retorna a quantidade de posts do feed criados após a data/hora (ISO). Usado para badge de não lidos. */
+export async function getFeedUnreadCount(since: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('feed_posts')
+    .select('id', { count: 'exact', head: true })
+    .gt('created_at', since)
+
+  if (error) return 0
+  return count ?? 0
+}
+
 /** Lista posts do feed, mais recentes primeiro. */
 export async function listFeedPosts(): Promise<FeedPost[]> {
   const { data, error } = await supabase

@@ -2,9 +2,20 @@ import { useRef, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../auth/AuthContext'
 import { uploadAvatar } from '../services/appUsers'
+import { useUnreadCounts } from '../hooks/useUnreadCounts'
+
+function NavBadge({ count }: { count: number }) {
+  if (count <= 0) return null
+  return (
+    <span className="ml-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-xs font-semibold text-white">
+      {count > 99 ? '99+' : count}
+    </span>
+  )
+}
 
 export function LayoutShell({ children }: { children: React.ReactNode }) {
   const { appUser, signOut, refreshAppUser } = useAuth()
+  const unread = useUnreadCounts(appUser?.id)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const isFelipe = appUser?.role === 'felipe'
@@ -68,7 +79,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
           <NavLink
             to="/demandas/minhas"
             className={({ isActive }) =>
-              `rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              `flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                 isActive
                   ? 'bg-blue-50 text-blue-700'
                   : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
@@ -76,6 +87,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
             }
           >
             Minhas demandas
+            <NavBadge count={unread.minhas} />
           </NavLink>
           <NavLink
             to="/demandas/nova"
@@ -117,7 +129,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
             <NavLink
               to="/triagem"
               className={({ isActive }) =>
-                `mt-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                `mt-2 flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                   isActive
                     ? 'bg-amber-50 text-amber-800'
                     : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
@@ -125,6 +137,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
               }
             >
               Caixa de entrada
+              <NavBadge count={unread.triagem} />
             </NavLink>
           )}
           <NavLink
@@ -142,7 +155,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
           <NavLink
             to="/feed"
             className={({ isActive }) =>
-              `rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+              `flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                 isActive
                   ? 'bg-blue-50 text-blue-700'
                   : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
@@ -150,6 +163,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
             }
           >
             Feed
+            <NavBadge count={unread.feed} />
           </NavLink>
           <div className="my-2 border-t border-slate-100 pt-2">
             <NavLink

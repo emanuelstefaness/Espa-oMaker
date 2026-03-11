@@ -188,6 +188,35 @@ export async function listTickets(
   return { tickets, hasMore }
 }
 
+/** Quantidade de demandas em que o usuário é resp/colab criadas após a data (YYYY-MM-DD). Para badge de não lidos. */
+export async function getMinhasDemandasUnreadCount(
+  userId: string,
+  sinceDate: string,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from('tickets')
+    .select('id', { count: 'exact', head: true })
+    .is('excluida_em', null)
+    .or(`responsavel_id.eq.${userId},colaborador_id.eq.${userId}`)
+    .gt('data_criacao', sinceDate)
+
+  if (error) return 0
+  return count ?? 0
+}
+
+/** Quantidade de demandas em triagem (status recebida) criadas após a data (YYYY-MM-DD). Para badge de não lidos. */
+export async function getTriagemUnreadCount(sinceDate: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('tickets')
+    .select('id', { count: 'exact', head: true })
+    .is('excluida_em', null)
+    .eq('status', 'recebida')
+    .gt('data_criacao', sinceDate)
+
+  if (error) return 0
+  return count ?? 0
+}
+
 export async function getTicket(id: string): Promise<Ticket | null> {
   const { data, error } = await supabase
     .from('tickets')
