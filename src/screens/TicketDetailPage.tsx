@@ -16,6 +16,7 @@ import {
   updateTicketStatus,
   updateTicketDados,
   uploadTicketFile,
+  deleteTicketFile,
   getTicket,
   setTicketExcluida,
   listTicketTasks,
@@ -63,6 +64,7 @@ export function TicketDetailPage() {
 
   const [files, setFiles] = useState<TicketFile[]>([])
   const [uploading, setUploading] = useState(false)
+  const [deletingFileId, setDeletingFileId] = useState<number | null>(null)
 
   const [tasks, setTasks] = useState<TicketTask[]>([])
   const [appUsers, setAppUsers] = useState<AppUserOption[]>([])
@@ -298,6 +300,22 @@ export function TicketDetailPage() {
     } finally {
       setUploading(false)
       event.target.value = ''
+    }
+  }
+
+  const handleExcluirAnexo = async (fileId: number) => {
+    if (!id || !window.confirm('Excluir este anexo? A ação não pode ser desfeita.')) return
+    setDeletingFileId(fileId)
+    try {
+      await deleteTicketFile(fileId)
+      const data = await listTicketFiles(id)
+      setFiles(data)
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Erro ao excluir anexo.'
+      setError(message)
+    } finally {
+      setDeletingFileId(null)
     }
   }
 
@@ -1153,14 +1171,27 @@ export function TicketDetailPage() {
                     className="flex items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50 px-3 py-2 text-sm text-slate-700"
                   >
                     <span className="truncate">{f.file_name}</span>
-                    <a
-                      href={f.public_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="font-medium text-blue-600 hover:text-blue-700"
-                    >
-                      Abrir
-                    </a>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <a
+                        href={f.public_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="font-medium text-blue-600 hover:text-blue-700"
+                      >
+                        Abrir
+                      </a>
+                      {!ticket?.excluida_em && (
+                        <button
+                          type="button"
+                          onClick={() => handleExcluirAnexo(f.id)}
+                          disabled={deletingFileId === f.id}
+                          className="text-rose-600 hover:text-rose-700 disabled:opacity-50"
+                          title="Excluir anexo"
+                        >
+                          {deletingFileId === f.id ? 'Excluindo...' : 'Excluir'}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
                 {files.length === 0 && (

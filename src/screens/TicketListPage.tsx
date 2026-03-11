@@ -180,6 +180,58 @@ export function TicketListPage() {
       t.responsavel_id === appUser?.id || t.colaborador_id === appUser?.id,
   )
 
+  const ticketsEmAndamento = isMinhasDemandas
+    ? tickets.filter((t) => t.status !== 'entregue')
+    : tickets
+  const ticketsEntregues = isMinhasDemandas
+    ? tickets.filter((t) => t.status === 'entregue')
+    : []
+
+  const renderTicketRow = (ticket: Ticket) => (
+    <tr
+      key={ticket.id}
+      className={`transition-colors ${getTicketCardClasses(ticket.categoria, ticket.prioridade)}`}
+    >
+      <td className="px-4 py-3">
+        <Link
+          to={`/demandas/${ticket.id}`}
+          className="font-medium text-slate-800 hover:text-blue-600"
+        >
+          {ticket.titulo}
+        </Link>
+        <p className="text-xs text-slate-500">
+          {ticket.solicitante_nome}
+        </p>
+      </td>
+      <td className="px-4 py-3 text-slate-700">
+        {ticket.responsavel_nome ? (
+          <UserAvatar
+            avatarUrl={ticket.responsavel_avatar_url}
+            name={ticket.responsavel_nome}
+            size="sm"
+            showName
+          />
+        ) : (
+          '—'
+        )}
+      </td>
+      <td className="px-4 py-3">
+        <TicketStatusPill status={ticket.status} />
+      </td>
+      <td className="px-4 py-3 text-slate-600">
+        {formatPrazo(ticket.data_entrega)}
+      </td>
+      <td className="px-4 py-3 text-right">
+        <Link
+          to={`/demandas/${ticket.id}`}
+          className="font-medium text-blue-600 hover:text-blue-700"
+        >
+          Ver
+        </Link>
+      </td>
+    </tr>
+  )
+
   return (
     <LayoutShell>
       <section className="space-y-6">
@@ -194,7 +246,8 @@ export function TicketListPage() {
                   Demandas em que você é responsável ou colaborador.
                   {!loading && (
                     <span className="ml-1 font-medium text-slate-600">
-                      Você tem {tickets.length} demanda{tickets.length !== 1 ? 's' : ''} e {myTasks.length} task{myTasks.length !== 1 ? 's' : ''}.
+                      {ticketsEmAndamento.length} em andamento, {ticketsEntregues.length} entregue{ticketsEntregues.length !== 1 ? 's' : ''}
+                      {myTasks.length > 0 && ` · ${myTasks.length} task${myTasks.length !== 1 ? 's' : ''}`}.
                     </span>
                   )}
                 </>
@@ -342,92 +395,138 @@ export function TicketListPage() {
           </div>
         )}
 
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  <th className="px-4 py-3">Demanda</th>
-                  <th className="px-4 py-3">Responsável</th>
-                  <th className="px-4 py-3">Status</th>
-                  <th className="px-4 py-3">Prazo</th>
-                  <th className="w-16 px-4 py-3 text-right">Ver</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {loading ? (
-                  <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
-                      Carregando demandas...
-                    </td>
+        {isMinhasDemandas ? (
+          <>
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="border-b border-slate-200 bg-slate-50/80 px-4 py-2">
+                <h2 className="text-sm font-semibold text-slate-700">
+                  Em andamento
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Demandas ainda não entregues.
+                </p>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      <th className="px-4 py-3">Demanda</th>
+                      <th className="px-4 py-3">Responsável</th>
+                      <th className="px-4 py-3">Status</th>
+                      <th className="px-4 py-3">Prazo</th>
+                      <th className="w-16 px-4 py-3 text-right">Ver</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {loading ? (
+                      <tr>
+                        <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
+                          Carregando demandas...
+                        </td>
+                      </tr>
+                    ) : (
+                      ticketsEmAndamento.map(renderTicketRow)
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              {!loading && ticketsEmAndamento.length === 0 && ticketsEntregues.length === 0 && (
+                <div className="px-4 py-12 text-center text-sm text-slate-500">
+                  Nenhuma demanda encontrada.
+                </div>
+              )}
+              {!loading && ticketsEmAndamento.length === 0 && ticketsEntregues.length > 0 && (
+                <div className="px-4 py-8 text-center text-sm text-slate-500">
+                  Nenhuma demanda em andamento.
+                </div>
+              )}
+            </div>
+            {ticketsEntregues.length > 0 && (
+              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+                <div className="border-b border-slate-200 bg-emerald-50/80 px-4 py-2">
+                  <h2 className="text-sm font-semibold text-slate-700">
+                    Entregues
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Demandas já finalizadas e entregues.
+                  </p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        <th className="px-4 py-3">Demanda</th>
+                        <th className="px-4 py-3">Responsável</th>
+                        <th className="px-4 py-3">Status</th>
+                        <th className="px-4 py-3">Prazo</th>
+                        <th className="w-16 px-4 py-3 text-right">Ver</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {ticketsEntregues.map(renderTicketRow)}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+            {hasMore && !loading && (
+              <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                >
+                  {loadingMore ? 'Carregando...' : 'Carregar mais'}
+                </button>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <th className="px-4 py-3">Demanda</th>
+                    <th className="px-4 py-3">Responsável</th>
+                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">Prazo</th>
+                    <th className="w-16 px-4 py-3 text-right">Ver</th>
                   </tr>
-                ) : (
-                  tickets.map((ticket) => (
-                    <tr
-                      key={ticket.id}
-                      className={`transition-colors ${getTicketCardClasses(ticket.categoria, ticket.prioridade)}`}
-                    >
-                      <td className="px-4 py-3">
-                        <Link
-                          to={`/demandas/${ticket.id}`}
-                          className="font-medium text-slate-800 hover:text-blue-600"
-                        >
-                          {ticket.titulo}
-                        </Link>
-                        <p className="text-xs text-slate-500">
-                          {ticket.solicitante_nome}
-                        </p>
-                      </td>
-                      <td className="px-4 py-3 text-slate-700">
-                        {ticket.responsavel_nome ? (
-                          <UserAvatar
-                            avatarUrl={ticket.responsavel_avatar_url}
-                            name={ticket.responsavel_nome}
-                            size="sm"
-                            showName
-                          />
-                        ) : (
-                          '—'
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <TicketStatusPill status={ticket.status} />
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {formatPrazo(ticket.data_entrega)}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <Link
-                          to={`/demandas/${ticket.id}`}
-                          className="font-medium text-blue-600 hover:text-blue-700"
-                        >
-                          Ver
-                        </Link>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {loading ? (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
+                        Carregando demandas...
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    tickets.map(renderTicketRow)
+                  )}
+                </tbody>
+              </table>
+            </div>
+            {!loading && tickets.length === 0 && (
+              <div className="px-4 py-12 text-center text-sm text-slate-500">
+                Nenhuma demanda encontrada.
+              </div>
+            )}
+            {hasMore && !loading && (
+              <div className="border-t border-slate-100 px-4 py-3">
+                <button
+                  type="button"
+                  onClick={loadMore}
+                  disabled={loadingMore}
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                >
+                  {loadingMore ? 'Carregando...' : 'Carregar mais'}
+                </button>
+              </div>
+            )}
           </div>
-          {!loading && tickets.length === 0 && (
-            <div className="px-4 py-12 text-center text-sm text-slate-500">
-              Nenhuma demanda encontrada.
-            </div>
-          )}
-          {hasMore && !loading && (
-            <div className="border-t border-slate-100 px-4 py-3">
-              <button
-                type="button"
-                onClick={loadMore}
-                disabled={loadingMore}
-                className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
-              >
-                {loadingMore ? 'Carregando...' : 'Carregar mais'}
-              </button>
-            </div>
-          )}
-        </div>
+        )}
 
         {!isMinhasDemandas && minhas.length > 0 && (
           <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">

@@ -1023,6 +1023,37 @@ export async function listTicketFiles(ticketId: string): Promise<TicketFile[]> {
   )
 }
 
+/** Remove um anexo (foto ou arquivo) da demanda: exclui do storage e da tabela ticket_files. */
+export async function deleteTicketFile(fileId: number): Promise<void> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) throw new Error('Faça login para excluir anexos.')
+
+  const { data: row, error: fetchError } = await supabase
+    .from('ticket_files')
+    .select('ticket_id, storage_path')
+    .eq('id', fileId)
+    .single()
+
+  if (fetchError || !row) throw new Error('Anexo não encontrado.')
+
+  const { error: storageError } = await supabase.storage
+    .from(BUCKET)
+    .remove([row.storage_path])
+
+  if (storageError) {
+    console.warn('Erro ao remover arquivo do storage:', storageError)
+  }
+
+  const { error: deleteError } = await supabase
+    .from('ticket_files')
+    .delete()
+    .eq('id', fileId)
+
+  if (deleteError) throw deleteError
+}
+
 function mapRowToTicket(row: any): Ticket {
   const impressao3d =
     row.categoria === 'servicos_3d'

@@ -395,7 +395,10 @@ function buildReports(tickets: Ticket[]): ReportsData {
     (sum, t) => sum + (t.valor_demanda ?? t.orcamento?.total ?? 0),
     0,
   )
-  const custoTotal = demandasAprovadasOuApos.reduce(
+  const demandasParaCusto = tickets.filter((t) =>
+    statusAprovadoOuApos.includes(t.status as (typeof statusAprovadoOuApos)[number]),
+  )
+  const custoTotal = demandasParaCusto.reduce(
     (sum, t) => sum + (t.custo ?? 0),
     0,
   )
