@@ -7,6 +7,8 @@ import {
 } from '../services/tickets'
 
 const STORAGE_PREFIX = 'espacomaker:lastVisited:'
+/** Data antiga: quando nunca visitou a seção, tudo conta como não lido. */
+const NEVER_VISITED = '2000-01-01T00:00:00.000Z'
 
 function getStored(key: string): string {
   try {
@@ -15,7 +17,7 @@ function getStored(key: string): string {
   } catch {
     /* ignore */
   }
-  return new Date().toISOString()
+  return NEVER_VISITED
 }
 
 function setStored(key: string, value: string): void {
@@ -79,6 +81,13 @@ export function useUnreadCounts(userId: string | undefined) {
     if (userId === undefined) return
     const t = setInterval(fetchCounts, 60_000)
     return () => clearInterval(t)
+  }, [userId, fetchCounts])
+
+  useEffect(() => {
+    if (userId === undefined) return
+    const onFocus = () => void fetchCounts()
+    window.addEventListener('focus', onFocus)
+    return () => window.removeEventListener('focus', onFocus)
   }, [userId, fetchCounts])
 
   return counts
