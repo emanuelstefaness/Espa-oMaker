@@ -27,10 +27,11 @@ const COLS_RELATORIO = [
 ] as const
 
 function formatHorasMinutos(horasDecimal: number): string {
-  if (horasDecimal <= 0) return '0 h'
-  const h = Math.floor(horasDecimal)
-  const m = Math.round((horasDecimal - h) * 60)
-  if (h === 0) return `${m} min`
+  if (horasDecimal <= 0) return '0 min'
+  const totalMin = horasDecimal * 60
+  if (totalMin < 60) return `${Math.round(totalMin)} min`
+  const h = Math.floor(totalMin / 60)
+  const m = Math.round(totalMin % 60)
   if (m === 0) return `${h} h`
   return `${h} h ${m} min`
 }
