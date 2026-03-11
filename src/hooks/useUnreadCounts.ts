@@ -41,7 +41,6 @@ export function useUnreadCounts(userId: string | undefined) {
   })
 
   const fetchCounts = useCallback(async () => {
-    const now = new Date().toISOString()
     const feedSince = getStored('feed')
     const minhasSince = getStored('minhas')
     const triagemSince = getStored('triagem')
