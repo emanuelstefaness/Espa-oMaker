@@ -26,6 +26,12 @@ import {
   updateTicketTask,
   deleteTicketTask,
 } from '../services/tickets'
+import {
+  getActiveSessionForUser,
+  startWorkSession,
+  endWorkSession,
+} from '../services/workSessions'
+import { createFeedPost } from '../services/feed'
 import { listAppUsers } from '../services/appUsers'
 import type { AppUserOption } from '../services/appUsers'
 import type {
@@ -65,6 +71,10 @@ export function TicketDetailPage() {
   const [files, setFiles] = useState<TicketFile[]>([])
   const [uploading, setUploading] = useState(false)
   const [deletingFileId, setDeletingFileId] = useState<number | null>(null)
+  const [activeWorkSession, setActiveWorkSession] = useState<{
+    ticket_id: string
+  } | null>(null)
+  const [workSessionLoading, setWorkSessionLoading] = useState(false)
 
   const [tasks, setTasks] = useState<TicketTask[]>([])
   const [appUsers, setAppUsers] = useState<AppUserOption[]>([])
@@ -127,6 +137,12 @@ export function TicketDetailPage() {
         setFiles(f)
         setTasks(t)
         setAppUsers(users)
+        if (appUser?.id) {
+          const session = await getActiveSessionForUser(appUser.id)
+          setActiveWorkSession(session ? { ticket_id: session.ticket_id } : null)
+        } else {
+          setActiveWorkSession(null)
+        }
       } catch (err) {
         const message =
           err instanceof Error ? err.message : 'Erro ao carregar demanda.'
@@ -136,7 +152,53 @@ export function TicketDetailPage() {
       }
     }
     load()
-  }, [id])
+  }, [id, appUser?.id])
+
+  const statusPermitePlayPause =
+    ticket &&
+    ticket.status !== 'entregue' &&
+    ticket.status !== 'cancelada' &&
+    !ticket.excluida_em
+
+  const handlePlayWork = async () => {
+    if (!id || !appUser) return
+    setWorkSessionLoading(true)
+    setError(null)
+    try {
+      await startWorkSession(id, appUser.id)
+      await createFeedPost(
+        {
+          tipo: 'atualizacao',
+          conteudo: `${appUser.name} está trabalhando nesta demanda.`,
+          ticket_id: id,
+        },
+        appUser.id,
+      )
+      setActiveWorkSession({ ticket_id: id })
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Erro ao iniciar sessão de trabalho.'
+      setError(message)
+    } finally {
+      setWorkSessionLoading(false)
+    }
+  }
+
+  const handlePauseWork = async () => {
+    if (!appUser) return
+    setWorkSessionLoading(true)
+    setError(null)
+    try {
+      await endWorkSession(appUser.id)
+      setActiveWorkSession(null)
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Erro ao pausar sessão de trabalho.'
+      setError(message)
+    } finally {
+      setWorkSessionLoading(false)
+    }
+  }
 
   const handleStatusChange = async (next: TicketStatus) => {
     if (!id) return
@@ -438,6 +500,31 @@ export function TicketDetailPage() {
               </span>
             )}
             <TicketStatusPill status={ticket.status} />
+            {statusPermitePlayPause && appUser && (
+              activeWorkSession?.ticket_id === id ? (
+                <button
+                  type="button"
+                  onClick={handlePauseWork}
+                  disabled={workSessionLoading}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-800 hover:bg-amber-100 disabled:opacity-50"
+                  title="Pausar sessão de trabalho"
+                >
+                  <span className="h-2 w-2 rounded-full bg-amber-500" aria-hidden />
+                  {workSessionLoading ? 'Pausando...' : 'Pausar'}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handlePlayWork}
+                  disabled={workSessionLoading}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
+                  title="Iniciar sessão de trabalho (aparece no feed)"
+                >
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden />
+                  {workSessionLoading ? 'Iniciando...' : 'Play'}
+                </button>
+              )
+            )}
             <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-100 px-2.5 py-1 text-xs text-slate-600">
               Resp.:{' '}
               {ticket.responsavel_nome ? (

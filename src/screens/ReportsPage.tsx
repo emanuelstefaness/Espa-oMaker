@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from 'react'
 import { LayoutShell } from '../components/LayoutShell'
 import type { Ticket } from '../types/ticket'
 import { listTickets } from '../services/tickets'
+import {
+  getWorkSessionsReport,
+  type WorkSessionReportRow,
+} from '../services/workSessions'
 
 interface ReportsData {
   totalPorResponsavelSemana: { responsavel: string; total: number }[]
@@ -77,6 +81,9 @@ export function ReportsPage() {
   const [error, setError] = useState<string | null>(null)
   const [dataInicio, setDataInicio] = useState('')
   const [dataFim, setDataFim] = useState('')
+  const [workSessionsReport, setWorkSessionsReport] = useState<
+    WorkSessionReportRow[]
+  >([])
   const printRef = useRef<HTMLDivElement>(null)
 
   const load = async (override?: { dataInicio?: string; dataFim?: string }) => {
@@ -92,6 +99,12 @@ export function ReportsPage() {
       setTickets(list)
       const reports = buildReports(list)
       setData(reports)
+      const workRows = await getWorkSessionsReport(
+        list.map((t) => t.id),
+        inicio || undefined,
+        fim || undefined,
+      )
+      setWorkSessionsReport(workRows)
     } catch (err) {
       const message =
         err instanceof Error ? err.message : 'Erro ao carregar relatórios.'
@@ -221,6 +234,51 @@ export function ReportsPage() {
                   </p>
                 </div>
               </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <h2 className="text-sm font-semibold text-slate-700">
+                Tempo de trabalho por demanda (play/pause)
+              </h2>
+              <p className="mt-0.5 text-xs text-slate-500">
+                Período filtrado · dias e horas conforme sessões de trabalho
+              </p>
+              {workSessionsReport.length === 0 ? (
+                <p className="mt-4 text-sm text-slate-500">
+                  Nenhuma sessão de trabalho no período.
+                </p>
+              ) : (
+                <div className="mt-4 overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-slate-200 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                        <th className="py-2 pr-4">Demanda</th>
+                        <th className="py-2 pr-4">Quem trabalhou</th>
+                        <th className="py-2 pr-4 text-right">Dias</th>
+                        <th className="py-2 text-right">Horas</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {workSessionsReport.map((row, idx) => (
+                        <tr key={`${row.ticketId}-${row.userName}-${idx}`}>
+                          <td className="py-2 pr-4 text-slate-800">
+                            {row.ticketTitulo}
+                          </td>
+                          <td className="py-2 pr-4 text-slate-700">
+                            {row.userName}
+                          </td>
+                          <td className="py-2 pr-4 text-right text-slate-700">
+                            {row.diasTrabalhados}
+                          </td>
+                          <td className="py-2 text-right font-medium text-slate-800">
+                            {row.horasTrabalhadas.toFixed(2)} h
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </>
         )}
