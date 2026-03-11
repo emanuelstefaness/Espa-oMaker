@@ -19,15 +19,30 @@ const COLS_RELATORIO = [
   'RESPONSÁVEL',
   'CLIENTE',
   'PRODUTO',
-  'MATERIAL',
-  'COR',
-  'QUANTIDADE TOTAL',
   'VALOR DO PRODUTO',
   'CUSTO',
+  'HORAS TRABALHADAS',
+  'RESPONSÁVEL PELAS HORAS',
   'PRAZO DE ENTREGA',
 ] as const
 
-function ticketToRow(t: Ticket): string[] {
+function getWorkSummaryForTicket(
+  ticketId: string,
+  workRows: WorkSessionReportRow[],
+): { horas: number; responsavel: string } {
+  const forTicket = workRows.filter((r) => r.ticketId === ticketId)
+  if (forTicket.length === 0) return { horas: 0, responsavel: '' }
+  const horas = forTicket.reduce((s, r) => s + r.horasTrabalhadas, 0)
+  const responsavel = forTicket
+    .map((r) => `${r.userName} (${r.horasTrabalhadas.toFixed(1)}h)`)
+    .join(', ')
+  return { horas, responsavel }
+}
+
+function ticketToRow(
+  t: Ticket,
+  workRows: WorkSessionReportRow[],
+): string[] {
   const valor =
     t.valor_demanda != null
       ? Number(t.valor_demanda).toLocaleString('pt-BR', {
@@ -42,25 +57,28 @@ function ticketToRow(t: Ticket): string[] {
           maximumFractionDigits: 2,
         })
       : ''
+  const { horas, responsavel } = getWorkSummaryForTicket(t.id, workRows)
   return [
     t.status,
     t.responsavel_nome ?? '',
     t.solicitante_nome ?? '',
     t.titulo ?? '',
-    t.impressao3d?.material ?? '',
-    t.impressao3d?.cor ?? '',
-    String(t.impressao3d?.quantidade_pecas ?? ''),
     valor,
     custoStr,
+    horas > 0 ? horas.toFixed(2) : '',
+    responsavel,
     t.data_entrega ?? '',
   ]
 }
 
-function exportXLS(tickets: Ticket[]) {
+function exportXLS(
+  tickets: Ticket[],
+  workRows: WorkSessionReportRow[],
+) {
   const BOM = '\uFEFF'
   const header = COLS_RELATORIO.join(';')
   const rows = tickets.map((t) =>
-    ticketToRow(t)
+    ticketToRow(t, workRows)
       .map((c) => `"${String(c).replace(/"/g, '""')}"`)
       .join(';'),
   )
@@ -293,7 +311,7 @@ export function ReportsPage() {
               <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={() => exportXLS(tickets)}
+                  onClick={() => exportXLS(tickets, workSessionsReport)}
                   className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
                 >
                   Exportar XLS
@@ -363,7 +381,7 @@ export function ReportsPage() {
                 <tbody>
                   {tickets.map((t) => (
                     <tr key={t.id} className="border-b border-slate-100">
-                      {ticketToRow(t).map((cell, i) => (
+                      {ticketToRow(t, workSessionsReport).map((cell, i) => (
                         <td
                           key={i}
                           className="border border-slate-100 px-3 py-2 text-slate-600"
@@ -403,7 +421,7 @@ export function ReportsPage() {
                 <tbody>
                   {tickets.map((t) => (
                     <tr key={t.id}>
-                      {ticketToRow(t).map((cell, i) => (
+                      {ticketToRow(t, workSessionsReport).map((cell, i) => (
                         <td key={i}>{cell}</td>
                       ))}
                     </tr>

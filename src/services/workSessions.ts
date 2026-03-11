@@ -66,6 +66,37 @@ export async function getActiveSessionForUser(
   return data as TicketWorkSession | null
 }
 
+export interface ActiveSessionInfo {
+  ticketId: string
+  userName: string
+}
+
+/** Lista todas as sessões ativas (alguém em play) para exibir ícone no dashboard e na lista. */
+export async function getActiveSessionsAll(): Promise<ActiveSessionInfo[]> {
+  const { data, error } = await supabase
+    .from('ticket_work_sessions')
+    .select('ticket_id, user_id')
+    .is('ended_at', null)
+
+  if (error) return []
+  const rows = (data ?? []) as { ticket_id: string; user_id: string }[]
+  if (rows.length === 0) return []
+
+  const userIds = [...new Set(rows.map((r) => r.user_id))]
+  const { data: users } = await supabase
+    .from('app_users')
+    .select('id, name')
+    .in('id', userIds)
+
+  const nameById = new Map(
+    (users ?? []).map((u: { id: string; name: string }) => [u.id, u.name]),
+  )
+  return rows.map((r) => ({
+    ticketId: r.ticket_id,
+    userName: nameById.get(r.user_id) ?? 'Usuário',
+  }))
+}
+
 /** Lista sessões para o relatório: agrupadas por demanda e usuário, com dias e horas. */
 export async function getWorkSessionsReport(
   ticketIds: string[],

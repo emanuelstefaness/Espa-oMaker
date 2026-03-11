@@ -16,6 +16,7 @@ import {
   listTasksByResponsavel,
 } from '../services/tickets'
 import type { TicketTaskWithDemanda } from '../services/tickets'
+import { getActiveSessionsAll } from '../services/workSessions'
 import { listAppUsers } from '../services/appUsers'
 import type { AppUserOption } from '../services/appUsers'
 import { useAuth } from '../auth/AuthContext'
@@ -54,6 +55,7 @@ export function TicketListPage() {
   const { appUser } = useAuth()
   const isMinhasDemandas = location.pathname === '/demandas/minhas'
   const [myTasks, setMyTasks] = useState<TicketTaskWithDemanda[]>([])
+  const [activeByTicket, setActiveByTicket] = useState<Map<string, string>>(new Map())
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
@@ -94,12 +96,16 @@ export function TicketListPage() {
         setError(null)
       }
       const offset = isInitial ? 0 : pageOffset ?? 0
-      const { tickets: data, hasMore: more } = await listTickets(mergedFilters, {
-        limit: PAGE_SIZE,
-        offset,
-        orderBy: 'data_entrega',
-        orderDirection: 'asc',
-      })
+      const [ticketsRes, activeList] = await Promise.all([
+        listTickets(mergedFilters, {
+          limit: PAGE_SIZE,
+          offset,
+          orderBy: 'data_entrega',
+          orderDirection: 'asc',
+        }),
+        getActiveSessionsAll(),
+      ])
+      const { tickets: data, hasMore: more } = ticketsRes
       const list = data ?? []
       const exibirLista =
         mergedFilters.status === 'cancelada' || mergedFilters.statusIn
@@ -107,6 +113,9 @@ export function TicketListPage() {
           : list.filter((t) => t.status !== 'cancelada')
       if (isInitial) {
         setTickets(exibirLista)
+        const map = new Map<string, string>()
+        for (const a of activeList) map.set(a.ticketId, a.userName)
+        setActiveByTicket(map)
       } else {
         setTickets((prev) => [...prev, ...exibirLista])
       }
@@ -187,21 +196,38 @@ export function TicketListPage() {
     ? tickets.filter((t) => t.status === 'entregue')
     : []
 
-  const renderTicketRow = (ticket: Ticket) => (
+  const renderTicketRow = (ticket: Ticket) => {
+    const whoActive = activeByTicket.get(ticket.id)
+    return (
     <tr
       key={ticket.id}
       className={`transition-colors ${getTicketCardClasses(ticket.categoria, ticket.prioridade)}`}
     >
       <td className="px-4 py-3">
-        <Link
-          to={`/demandas/${ticket.id}`}
-          className="font-medium text-slate-800 hover:text-blue-600"
-        >
-          {ticket.titulo}
-        </Link>
-        <p className="text-xs text-slate-500">
-          {ticket.solicitante_nome}
-        </p>
+        <div className="flex items-center gap-2">
+          {whoActive && (
+            <span
+              className="shrink-0 rounded-full bg-emerald-500 p-1 text-white"
+              title={`${whoActive} está trabalhando nesta demanda`}
+              aria-label={`${whoActive} em trabalho`}
+            >
+              <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </span>
+          )}
+          <div className="min-w-0">
+            <Link
+              to={`/demandas/${ticket.id}`}
+              className="font-medium text-slate-800 hover:text-blue-600"
+            >
+              {ticket.titulo}
+            </Link>
+            <p className="text-xs text-slate-500">
+              {ticket.solicitante_nome}
+            </p>
+          </div>
+        </div>
       </td>
       <td className="px-4 py-3 text-slate-700">
         {ticket.responsavel_nome ? (
@@ -231,6 +257,7 @@ export function TicketListPage() {
       </td>
     </tr>
   )
+  }
 
   return (
     <LayoutShell>

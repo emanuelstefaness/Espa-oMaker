@@ -5,6 +5,7 @@ import { TicketStatusPill } from '../components/TicketStatusPill'
 import { UserAvatar } from '../components/UserAvatar'
 import type { Ticket } from '../types/ticket'
 import { listTickets } from '../services/tickets'
+import { getActiveSessionsAll } from '../services/workSessions'
 import { getTicketCardClasses } from '../constants/ticketOptions'
 
 const POLL_INTERVAL_MS = 15 * 60 * 1000 // 15 minutos
@@ -12,15 +13,22 @@ const POLL_INTERVAL_MS = 15 * 60 * 1000 // 15 minutos
 export function DashboardPage() {
   const [tickets, setTickets] = useState<Ticket[]>([])
   const [loading, setLoading] = useState(true)
+  const [activeByTicket, setActiveByTicket] = useState<Map<string, string>>(new Map())
 
   useEffect(() => {
     const load = async () => {
       try {
-        const { tickets: data } = await listTickets(
-          { includeCancelada: true },
-          { limit: 200, orderBy: 'data_entrega', orderDirection: 'asc' },
-        )
-        setTickets(data)
+        const [ticketsRes, activeList] = await Promise.all([
+          listTickets(
+            { includeCancelada: true },
+            { limit: 200, orderBy: 'data_entrega', orderDirection: 'asc' },
+          ),
+          getActiveSessionsAll(),
+        ])
+        setTickets(ticketsRes.tickets)
+        const map = new Map<string, string>()
+        for (const a of activeList) map.set(a.ticketId, a.userName)
+        setActiveByTicket(map)
       } catch {
         setTickets([])
       } finally {
@@ -30,11 +38,19 @@ export function DashboardPage() {
     load()
 
     const interval = setInterval(() => {
-      listTickets(
+      Promise.all([
+        listTickets(
           { includeCancelada: true },
           { limit: 200, orderBy: 'data_entrega', orderDirection: 'asc' },
-        )
-        .then(({ tickets: data }) => setTickets(data))
+        ),
+        getActiveSessionsAll(),
+      ])
+        .then(([{ tickets: data }, activeList]) => {
+          setTickets(data)
+          const map = new Map<string, string>()
+          for (const a of activeList) map.set(a.ticketId, a.userName)
+          setActiveByTicket(map)
+        })
         .catch(() => {})
     }, POLL_INTERVAL_MS)
 
@@ -213,17 +229,32 @@ export function DashboardPage() {
                     </button>
                   </div>
                   <div className="grid grid-cols-3 grid-rows-3 gap-2 py-3 px-2 min-h-[280px]">
-                    {filaAtivaPage.map((ticket) => (
+                    {filaAtivaPage.map((ticket) => {
+                      const whoActive = activeByTicket.get(ticket.id)
+                      return (
                       <div
                         key={ticket.id}
                         className={`rounded-lg border px-3 py-2 transition-colors flex flex-col min-h-0 ${getTicketCardClasses(ticket.categoria, ticket.prioridade)}`}
                       >
-                        <Link
-                          to={`/demandas/${ticket.id}`}
-                          className="font-medium text-slate-800 hover:text-blue-600 line-clamp-2"
-                        >
-                          {ticket.titulo}
-                        </Link>
+                        <div className="flex items-start gap-1.5">
+                          <Link
+                            to={`/demandas/${ticket.id}`}
+                            className="font-medium text-slate-800 hover:text-blue-600 line-clamp-2 flex-1 min-w-0"
+                          >
+                            {ticket.titulo}
+                          </Link>
+                          {whoActive && (
+                            <span
+                              className="shrink-0 rounded-full bg-emerald-500 p-1 text-white"
+                              title={`${whoActive} está trabalhando nesta demanda`}
+                              aria-label={`${whoActive} em trabalho`}
+                            >
+                              <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                                <path d="M8 5v14l11-7z" />
+                              </svg>
+                            </span>
+                          )}
+                        </div>
                         <p className="mt-1 flex items-center gap-2 text-xs text-slate-500">
                           <span className="line-clamp-1">{ticket.solicitante_nome}</span>
                           {ticket.responsavel_nome && (
@@ -250,17 +281,31 @@ export function DashboardPage() {
                           Prazo: {ticket.data_entrega ?? '—'}
                         </p>
                       </div>
-                    ))}
+                    )})}
                   </div>
                 </>
               ) : (
                 <ul className="divide-y divide-slate-100">
-                  {filaAtiva.map((ticket) => (
+                  {filaAtiva.map((ticket) => {
+                    const whoActive = activeByTicket.get(ticket.id)
+                    return (
                     <li
                       key={ticket.id}
                       className={`flex items-center justify-between gap-3 rounded-lg border px-4 py-3 transition-colors ${getTicketCardClasses(ticket.categoria, ticket.prioridade)}`}
                     >
-                      <div className="min-w-0 flex-1">
+                      <div className="min-w-0 flex-1 flex items-center gap-2">
+                        {whoActive && (
+                          <span
+                            className="shrink-0 rounded-full bg-emerald-500 p-1 text-white"
+                            title={`${whoActive} está trabalhando nesta demanda`}
+                            aria-label={`${whoActive} em trabalho`}
+                          >
+                            <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                              <path d="M8 5v14l11-7z" />
+                            </svg>
+                          </span>
+                        )}
+                        <div className="min-w-0 flex-1">
                         <Link
                           to={`/demandas/${ticket.id}`}
                           className="font-medium text-slate-800 hover:text-blue-600"
@@ -289,12 +334,13 @@ export function DashboardPage() {
                             </span>
                           )}
                         </div>
+                        </div>
                       </div>
-                      <span className="text-xs text-slate-400">
+                      <span className="shrink-0 text-xs text-slate-400">
                         {ticket.data_entrega ?? '—'}
                       </span>
                     </li>
-                  ))}
+                  )})}
                 </ul>
               )}
               {!loading && filaAtiva.length === 0 && (
