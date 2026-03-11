@@ -26,17 +26,26 @@ const COLS_RELATORIO = [
   'PRAZO DE ENTREGA',
 ] as const
 
+function formatHorasMinutos(horasDecimal: number): string {
+  if (horasDecimal <= 0) return '0 h'
+  const h = Math.floor(horasDecimal)
+  const m = Math.round((horasDecimal - h) * 60)
+  if (h === 0) return `${m} min`
+  if (m === 0) return `${h} h`
+  return `${h} h ${m} min`
+}
+
 function getWorkSummaryForTicket(
   ticketId: string,
   workRows: WorkSessionReportRow[],
-): { horas: number; responsavel: string } {
+): { horas: number; horasStr: string; responsavel: string } {
   const forTicket = workRows.filter((r) => r.ticketId === ticketId)
-  if (forTicket.length === 0) return { horas: 0, responsavel: '' }
+  if (forTicket.length === 0) return { horas: 0, horasStr: '', responsavel: '' }
   const horas = forTicket.reduce((s, r) => s + r.horasTrabalhadas, 0)
   const responsavel = forTicket
-    .map((r) => `${r.userName} (${r.horasTrabalhadas.toFixed(1)}h)`)
+    .map((r) => `${r.userName} (${formatHorasMinutos(r.horasTrabalhadas)})`)
     .join(', ')
-  return { horas, responsavel }
+  return { horas, horasStr: formatHorasMinutos(horas), responsavel }
 }
 
 function ticketToRow(
@@ -57,7 +66,7 @@ function ticketToRow(
           maximumFractionDigits: 2,
         })
       : ''
-  const { horas, responsavel } = getWorkSummaryForTicket(t.id, workRows)
+  const { horasStr, responsavel } = getWorkSummaryForTicket(t.id, workRows)
   return [
     t.status,
     t.responsavel_nome ?? '',
@@ -65,7 +74,7 @@ function ticketToRow(
     t.titulo ?? '',
     valor,
     custoStr,
-    horas > 0 ? horas.toFixed(2) : '',
+    horasStr,
     responsavel,
     t.data_entrega ?? '',
   ]
@@ -289,7 +298,7 @@ export function ReportsPage() {
                             {row.diasTrabalhados}
                           </td>
                           <td className="py-2 text-right font-medium text-slate-800">
-                            {row.horasTrabalhadas.toFixed(2)} h
+                            {formatHorasMinutos(row.horasTrabalhadas)}
                           </td>
                         </tr>
                       ))}
