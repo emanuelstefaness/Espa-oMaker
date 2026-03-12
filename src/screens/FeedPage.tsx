@@ -313,7 +313,7 @@ export function FeedPage() {
                     id="new-post-files"
                     type="file"
                     multiple
-                    accept="image/*,.pdf,.doc,.docx,.stl,.3mf"
+                    accept="image/*,.pdf,.doc,.docx,.stl,.3mf,.zip,.rar,.7z"
                     onChange={addFiles}
                     className="mt-0.5 block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-slate-100 file:px-3 file:py-1.5 file:text-slate-700"
                   />

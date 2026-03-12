@@ -8,7 +8,7 @@ import { MaterialSelect } from '../components/MaterialSelect'
 
 const MAX_IMAGENS = 5
 const MAX_ARQUIVOS_3D = 5
-const EXTENSÕES_3D = '.stl,.3mf'
+const EXTENSÕES_3D = '.stl,.3mf,.zip,.rar,.7z'
 
 export function SolicitarPage() {
   const [titulo, setTitulo] = useState('')
@@ -43,11 +43,16 @@ export function SolicitarPage() {
 
   const addArquivos3d = (files: FileList | null) => {
     if (!files?.length) return
-    const list = Array.from(files).filter(
-      (f) =>
-        f.name.toLowerCase().endsWith('.stl') ||
-        f.name.toLowerCase().endsWith('.3mf'),
-    )
+    const list = Array.from(files).filter((f) => {
+      const name = f.name.toLowerCase()
+      return (
+        name.endsWith('.stl') ||
+        name.endsWith('.3mf') ||
+        name.endsWith('.zip') ||
+        name.endsWith('.rar') ||
+        name.endsWith('.7z')
+      )
+    })
     setArquivos3d((prev) => [...prev, ...list].slice(0, MAX_ARQUIVOS_3D))
   }
 
@@ -325,7 +330,7 @@ export function SolicitarPage() {
 
             <div>
               <label className={labelClass}>
-                Arquivos 3D — STL ou 3MF (até {MAX_ARQUIVOS_3D} arquivos)
+                Arquivos 3D e compactados — STL, 3MF, ZIP, RAR, 7z (até {MAX_ARQUIVOS_3D} arquivos)
               </label>
               <input
                 ref={arquivos3dInputRef}
@@ -346,7 +351,7 @@ export function SolicitarPage() {
               >
                 {arquivos3d.length >= MAX_ARQUIVOS_3D
                   ? `Máximo ${MAX_ARQUIVOS_3D} arquivos`
-                  : 'Adicionar arquivos .stl ou .3mf'}
+                  : 'Adicionar arquivos .stl, .3mf ou .zip'}
               </button>
               {arquivos3d.length > 0 && (
                 <p className="mt-1 text-xs text-slate-500">

@@ -344,7 +344,7 @@ export function NewTicketPage() {
               <input
                 ref={arquivoInputRef}
                 type="file"
-                accept=".stl,.obj,.3mf,.pdf,image/*"
+                accept=".stl,.obj,.3mf,.pdf,.zip,.rar,.7z,image/*"
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0]

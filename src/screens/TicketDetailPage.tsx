@@ -1241,7 +1241,7 @@ export function TicketDetailPage() {
                     + Arquivo
                     <input
                       type="file"
-                      accept=".stl,.obj,.3mf,.pdf,image/*"
+                      accept=".stl,.obj,.3mf,.pdf,.zip,.rar,.7z,image/*"
                       className="hidden"
                       onChange={(e) => handleUploadChange(e, 'arquivo')}
                     />
