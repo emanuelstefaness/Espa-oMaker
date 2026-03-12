@@ -322,6 +322,7 @@ export function TicketListPage() {
             <option value="">Todos os status</option>
             <option value="recebida">Recebida</option>
             <option value="em_analise">Em análise</option>
+            <option value="orcamento_em_criacao">Orçamento em criação</option>
             <option value="aguardando_aprovacao">Aguardando aprovação</option>
             <option value="aprovado">Aprovado</option>
             <option value="em_producao">Em produção</option>
