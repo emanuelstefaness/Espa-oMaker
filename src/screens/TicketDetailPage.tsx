@@ -25,6 +25,7 @@ import {
   updateTicketTaskResponsavel,
   updateTicketTask,
   deleteTicketTask,
+  updateTicketResponsavel,
 } from '../services/tickets'
 import {
   getActiveSessionForUser,
@@ -75,6 +76,8 @@ export function TicketDetailPage() {
     ticket_id: string
   } | null>(null)
   const [workSessionLoading, setWorkSessionLoading] = useState(false)
+  const [responsavelTriagemId, setResponsavelTriagemId] = useState<string>('')
+  const [savingResponsavel, setSavingResponsavel] = useState(false)
 
   const [tasks, setTasks] = useState<TicketTask[]>([])
   const [appUsers, setAppUsers] = useState<AppUserOption[]>([])
@@ -157,6 +160,10 @@ export function TicketDetailPage() {
     load()
   }, [id, appUser?.id])
 
+  useEffect(() => {
+    setResponsavelTriagemId(ticket?.responsavel_id ?? '')
+  }, [ticket?.id, ticket?.responsavel_id])
+
   const statusPermitePlayPause =
     ticket &&
     ticket.status !== 'entregue' &&
@@ -217,6 +224,24 @@ export function TicketDetailPage() {
           ? String((err as Error).message)
           : 'Erro ao atualizar status.'
       setError(message)
+    }
+  }
+
+  const handleDefinirResponsavel = async () => {
+    if (!id) return
+    setSavingResponsavel(true)
+    setError(null)
+    try {
+      const updated = await updateTicketResponsavel(id, {
+        responsavel_id: responsavelTriagemId || null,
+      })
+      setTicket(updated)
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Erro ao definir responsável.'
+      setError(message)
+    } finally {
+      setSavingResponsavel(false)
     }
   }
 
@@ -1274,6 +1299,41 @@ export function TicketDetailPage() {
           </div>
 
           <div className="space-y-4">
+            {isFelipe && (
+              <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Definir responsável (triagem)
+                </p>
+                <p className="text-sm text-slate-600">
+                  Demandas que não passaram pela caixa de entrada podem ter o responsável definido aqui.
+                </p>
+                <div className="flex flex-wrap items-end gap-2">
+                  <div className="min-w-[180px] flex-1">
+                    <label className="sr-only">Responsável</label>
+                    <select
+                      value={responsavelTriagemId}
+                      onChange={(e) => setResponsavelTriagemId(e.target.value)}
+                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+                    >
+                      <option value="">— Nenhum —</option>
+                      {appUsers.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleDefinirResponsavel}
+                    disabled={savingResponsavel}
+                    className="rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 disabled:opacity-50"
+                  >
+                    {savingResponsavel ? 'Salvando…' : 'Atribuir'}
+                  </button>
+                </div>
+              </div>
+            )}
             <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Workflow
