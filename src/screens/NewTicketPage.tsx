@@ -29,6 +29,13 @@ export function NewTicketPage() {
   const [prioridade, setPrioridade] = useState<TicketPrioridade>('media')
   const [dataEntrega, setDataEntrega] = useState('')
   const [valorDemanda, setValorDemanda] = useState<number | ''>('')
+  const [tipoReceita, setTipoReceita] = useState<'monetaria' | 'contrapartida'>(
+    'monetaria',
+  )
+  const [contrapartidaMaterial, setContrapartidaMaterial] = useState('')
+  const [contrapartidaQuantidade, setContrapartidaQuantidade] = useState<
+    number | ''
+  >('')
   const [custo, setCusto] = useState<number | ''>('')
 
   const [material, setMaterial] = useState('PLA')
@@ -78,6 +85,15 @@ export function NewTicketPage() {
         prioridade,
         data_entrega: dataEntrega || undefined,
         valor_demanda: valorDemanda !== '' ? Number(valorDemanda) : undefined,
+        tipo_receita: tipoReceita,
+        contrapartida_material:
+          tipoReceita === 'contrapartida' && contrapartidaMaterial
+            ? contrapartidaMaterial
+            : undefined,
+        contrapartida_quantidade:
+          tipoReceita === 'contrapartida' && contrapartidaQuantidade !== ''
+            ? Number(contrapartidaQuantidade)
+            : undefined,
         custo: custo !== '' ? Number(custo) : undefined,
         material_impressao:
           categoria === 'servicos_3d' ? material : undefined,
@@ -226,9 +242,38 @@ export function NewTicketPage() {
             </div>
           </div>
 
+          <div className="space-y-3">
+            <p className={labelClass}>Tipo de receita</p>
+            <div className="flex gap-4">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="tipoReceita"
+                  checked={tipoReceita === 'monetaria'}
+                  onChange={() => setTipoReceita('monetaria')}
+                  className="rounded border-slate-300"
+                />
+                <span className="text-sm">Monetária</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="tipoReceita"
+                  checked={tipoReceita === 'contrapartida'}
+                  onChange={() => setTipoReceita('contrapartida')}
+                  className="rounded border-slate-300"
+                />
+                <span className="text-sm">Contrapartida</span>
+              </label>
+            </div>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className={labelClass}>Valor receita (R$)</label>
+              <label className={labelClass}>
+                {tipoReceita === 'contrapartida'
+                  ? 'Valor equivalente (R$)'
+                  : 'Valor receita (R$)'}
+              </label>
               <input
                 type="number"
                 min={0}
@@ -243,6 +288,44 @@ export function NewTicketPage() {
                 placeholder="0,00"
               />
             </div>
+            {tipoReceita === 'contrapartida' && (
+              <>
+                <div>
+                  <label className={labelClass}>Material (contrapartida)</label>
+                  <input
+                    type="text"
+                    value={contrapartidaMaterial}
+                    onChange={(e) => setContrapartidaMaterial(e.target.value)}
+                    className={inputClass}
+                    placeholder="Ex: PLA, resina"
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>
+                    Quantidade (contrapartida)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    value={
+                      contrapartidaQuantidade === ''
+                        ? ''
+                        : contrapartidaQuantidade
+                    }
+                    onChange={(e) =>
+                      setContrapartidaQuantidade(
+                        e.target.value === ''
+                          ? ''
+                          : Number(e.target.value),
+                      )
+                    }
+                    className={inputClass}
+                    placeholder="0"
+                  />
+                </div>
+              </>
+            )}
             <div>
               <label className={labelClass}>Custo (R$)</label>
               <input

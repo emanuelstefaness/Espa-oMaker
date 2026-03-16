@@ -87,6 +87,9 @@ export async function listTickets(
       status_orcamento,
       sem_cobranca,
       valor_demanda,
+      tipo_receita,
+      contrapartida_material,
+      contrapartida_quantidade,
       custo,
       nivel_dificuldade,
       excluida_em,
@@ -250,6 +253,9 @@ export async function getTicket(id: string): Promise<Ticket | null> {
   status_orcamento,
   sem_cobranca,
   valor_demanda,
+  tipo_receita,
+  contrapartida_material,
+  contrapartida_quantidade,
   custo,
   nivel_dificuldade,
   excluida_em,
@@ -296,6 +302,9 @@ export interface CreateTicketInput {
   prioridade: TicketPrioridade
   data_entrega?: string
   valor_demanda?: number | null
+  tipo_receita?: 'monetaria' | 'contrapartida' | null
+  contrapartida_material?: string | null
+  contrapartida_quantidade?: number | null
   custo?: number | null
   material_impressao?: string
   cor?: string
@@ -324,6 +333,9 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
       prioridade: input.prioridade,
       data_entrega: input.data_entrega ?? null,
       valor_demanda: input.valor_demanda ?? null,
+      tipo_receita: input.tipo_receita ?? 'monetaria',
+      contrapartida_material: input.contrapartida_material ?? null,
+      contrapartida_quantidade: input.contrapartida_quantidade ?? null,
       custo: input.custo ?? null,
       material_impressao: input.material_impressao ?? null,
       cor: input.cor ?? null,
@@ -421,6 +433,9 @@ export interface UpdateTicketDadosInput {
   prioridade?: TicketPrioridade
   data_entrega?: string | null
   valor_demanda?: number | null
+  tipo_receita?: 'monetaria' | 'contrapartida' | null
+  contrapartida_material?: string | null
+  contrapartida_quantidade?: number | null
   custo?: number | null
   material_impressao?: string | null
   cor?: string | null
@@ -456,6 +471,12 @@ export async function updateTicketDados(
     updatePayload.observacoes_tecnicas = payload.observacoes_tecnicas
   if (payload.valor_demanda !== undefined)
     updatePayload.valor_demanda = payload.valor_demanda
+  if (payload.tipo_receita !== undefined)
+    updatePayload.tipo_receita = payload.tipo_receita
+  if (payload.contrapartida_material !== undefined)
+    updatePayload.contrapartida_material = payload.contrapartida_material
+  if (payload.contrapartida_quantidade !== undefined)
+    updatePayload.contrapartida_quantidade = payload.contrapartida_quantidade
   if (payload.custo !== undefined) updatePayload.custo = payload.custo
   if (payload.nivel_dificuldade !== undefined)
     updatePayload.nivel_dificuldade = payload.nivel_dificuldade
@@ -1127,6 +1148,12 @@ function mapRowToTicket(row: any): Ticket {
     data_criacao: row.data_criacao,
     data_entrega: row.data_entrega ?? null,
     valor_demanda: row.valor_demanda != null ? Number(row.valor_demanda) : null,
+    tipo_receita: row.tipo_receita ?? null,
+    contrapartida_material: row.contrapartida_material ?? null,
+    contrapartida_quantidade:
+      row.contrapartida_quantidade != null
+        ? Number(row.contrapartida_quantidade)
+        : null,
     custo: row.custo != null ? Number(row.custo) : null,
     nivel_dificuldade: row.nivel_dificuldade ?? null,
     impressao3d,

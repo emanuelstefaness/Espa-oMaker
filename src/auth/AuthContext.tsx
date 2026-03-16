@@ -43,22 +43,26 @@ function mapRole(email: string): AppUserRole {
 
 async function resolveAppUser(user: User): Promise<AppUser> {
   const email = user.email ?? ''
-  const fallback = {
+  const fallback: AppUser = {
     id: user.id,
     name: user.user_metadata?.name ?? email.split('@')[0],
     email,
     role: mapRole(email),
-    avatar_url: null as string | null,
+    avatar_url: null,
   }
-  const profile = await getAppUserProfile(user.id)
-  if (profile) {
-    return {
-      id: user.id,
-      name: profile.name,
-      email,
-      role: profile.role,
-      avatar_url: profile.avatar_url,
+  try {
+    const profile = await getAppUserProfile(user.id)
+    if (profile) {
+      return {
+        id: user.id,
+        name: profile.name,
+        email,
+        role: profile.role,
+        avatar_url: profile.avatar_url,
+      }
     }
+  } catch {
+    // Usuário novo ou sem linha em app_users: usa fallback para não travar as telas
   }
   return fallback
 }

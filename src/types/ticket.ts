@@ -69,6 +69,12 @@ export interface Ticket {
   data_entrega?: string | null
   atraso?: boolean
   valor_demanda?: number | null
+  /** Receita monetária ou contrapartida (ex.: material) */
+  tipo_receita?: 'monetaria' | 'contrapartida' | null
+  /** Material da contrapartida quando tipo_receita = contrapartida */
+  contrapartida_material?: string | null
+  /** Quantidade do material na contrapartida */
+  contrapartida_quantidade?: number | null
   /** Custo da demanda (para relatório de despesas e receita líquida) */
   custo?: number | null
   nivel_dificuldade?: NivelDificuldade | null

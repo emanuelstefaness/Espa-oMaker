@@ -111,6 +111,9 @@ export function TicketDetailPage() {
     tamanho_escala: '',
     observacoes_tecnicas: '',
     valor_demanda: '' as number | '',
+    tipo_receita: 'monetaria' as 'monetaria' | 'contrapartida',
+    contrapartida_material: '',
+    contrapartida_quantidade: '' as number | '',
     custo: '' as number | '',
   })
 
@@ -399,6 +402,12 @@ export function TicketDetailPage() {
       observacoes_tecnicas:
         ticket.impressao3d?.observacoes_tecnicas ?? '',
       valor_demanda: ticket.valor_demanda ?? ('' as number | ''),
+      tipo_receita: ticket.tipo_receita ?? 'monetaria',
+      contrapartida_material: ticket.contrapartida_material ?? '',
+      contrapartida_quantidade:
+        ticket.contrapartida_quantidade != null
+          ? ticket.contrapartida_quantidade
+          : ('' as number | ''),
       custo: ticket.custo ?? ('' as number | ''),
     })
     setEditingDados(true)
@@ -441,6 +450,17 @@ export function TicketDetailPage() {
         valor_demanda:
           formDados.valor_demanda !== ''
             ? Number(formDados.valor_demanda)
+            : null,
+        tipo_receita: formDados.tipo_receita,
+        contrapartida_material:
+          formDados.tipo_receita === 'contrapartida' &&
+          formDados.contrapartida_material
+            ? formDados.contrapartida_material
+            : null,
+        contrapartida_quantidade:
+          formDados.tipo_receita === 'contrapartida' &&
+          formDados.contrapartida_quantidade !== ''
+            ? Number(formDados.contrapartida_quantidade)
             : null,
         custo:
           formDados.custo !== '' ? Number(formDados.custo) : null,
@@ -670,9 +690,42 @@ export function TicketDetailPage() {
                       />
                     </div>
                   </div>
+                  <div className="md:col-span-2">
+                    <label className="mb-1 block text-xs font-medium text-slate-600">
+                      Tipo de receita
+                    </label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="tipo_receita"
+                          checked={formDados.tipo_receita === 'monetaria'}
+                          onChange={() =>
+                            setFormDados((p) => ({ ...p, tipo_receita: 'monetaria' }))
+                          }
+                          className="rounded border-slate-300"
+                        />
+                        <span className="text-sm">Monetária</span>
+                      </label>
+                      <label className="flex items-center gap-2">
+                        <input
+                          type="radio"
+                          name="tipo_receita"
+                          checked={formDados.tipo_receita === 'contrapartida'}
+                          onChange={() =>
+                            setFormDados((p) => ({ ...p, tipo_receita: 'contrapartida' }))
+                          }
+                          className="rounded border-slate-300"
+                        />
+                        <span className="text-sm">Contrapartida</span>
+                      </label>
+                    </div>
+                  </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-slate-600">
-                      Valor da demanda (R$)
+                      {formDados.tipo_receita === 'contrapartida'
+                        ? 'Valor equivalente (R$)'
+                        : 'Valor da demanda (R$)'}
                     </label>
                     <input
                       type="number"
@@ -692,6 +745,53 @@ export function TicketDetailPage() {
                       placeholder="0,00"
                     />
                   </div>
+                  {formDados.tipo_receita === 'contrapartida' && (
+                    <>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-slate-600">
+                          Material (contrapartida)
+                        </label>
+                        <input
+                          type="text"
+                          value={formDados.contrapartida_material}
+                          onChange={(e) =>
+                            setFormDados((p) => ({
+                              ...p,
+                              contrapartida_material: e.target.value,
+                            }))
+                          }
+                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                          placeholder="Ex: PLA, resina"
+                        />
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-xs font-medium text-slate-600">
+                          Quantidade (contrapartida)
+                        </label>
+                        <input
+                          type="number"
+                          min={0}
+                          step={0.01}
+                          value={
+                            formDados.contrapartida_quantidade === ''
+                              ? ''
+                              : formDados.contrapartida_quantidade
+                          }
+                          onChange={(e) =>
+                            setFormDados((p) => ({
+                              ...p,
+                              contrapartida_quantidade:
+                                e.target.value === ''
+                                  ? ('' as number | '')
+                                  : Number(e.target.value),
+                            }))
+                          }
+                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                          placeholder="0"
+                        />
+                      </div>
+                    </>
+                  )}
                   <div>
                     <label className="mb-1 block text-xs font-medium text-slate-600">
                       Custo (R$)
@@ -843,10 +943,38 @@ export function TicketDetailPage() {
                     <Field label="Prazo de entrega">
                       {ticket.data_entrega ?? '—'}
                     </Field>
-                    <Field label="Valor da demanda">
-                      {ticket.valor_demanda != null
-                        ? `R$ ${Number(ticket.valor_demanda).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-                        : '—'}
+                    <Field
+                      label={
+                        ticket.tipo_receita === 'contrapartida'
+                          ? 'Receita (contrapartida)'
+                          : 'Valor da demanda (R$)'
+                      }
+                    >
+                      {ticket.valor_demanda != null ? (
+                        <>
+                          {ticket.tipo_receita === 'contrapartida' ? (
+                            <span>
+                              R${' '}
+                              {Number(ticket.valor_demanda).toLocaleString('pt-BR', {
+                                minimumFractionDigits: 2,
+                              })}{' '}
+                              (equiv.)
+                              {ticket.contrapartida_material && (
+                                <> · {ticket.contrapartida_material}</>
+                              )}
+                              {ticket.contrapartida_quantidade != null && (
+                                <> · Qtd: {Number(ticket.contrapartida_quantidade)}</>
+                              )}
+                            </span>
+                          ) : (
+                            `R$ ${Number(ticket.valor_demanda).toLocaleString('pt-BR', {
+                              minimumFractionDigits: 2,
+                            })}`
+                          )}
+                        </>
+                      ) : (
+                        '—'
+                      )}
                     </Field>
                     <Field label="Custo">
                       {ticket.custo != null

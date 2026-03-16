@@ -9,8 +9,14 @@ import {
 
 interface ReportsData {
   totalPorResponsavelSemana: { responsavel: string; total: number }[]
-  receitaTotalExternas: number
+  /** Receita em dinheiro (tipo_receita !== 'contrapartida') */
+  receitaMonetaria: number
+  /** Receita em contrapartida (tipo_receita === 'contrapartida') */
+  receitaContrapartida: number
+  /** Receita geral = monetária + contrapartida */
+  receitaGeral: number
   custoTotal: number
+  /** Só receita monetária - custo (contrapartida não entra) */
   receitaLiquida: number
 }
 
@@ -236,13 +242,35 @@ export function ReportsPage() {
               <p className="mt-0.5 text-xs text-slate-500">
                 Período filtrado · demandas externas com orçamento aprovado ou mais
               </p>
-              <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
                 <div className="rounded-lg border border-emerald-200 bg-emerald-50/80 p-4">
                   <p className="text-xs font-medium uppercase tracking-wider text-emerald-700">
                     Receita geral
                   </p>
                   <p className="mt-1 text-xl font-semibold text-emerald-800">
-                    R$ {data.receitaTotalExternas.toFixed(2)}
+                    R$ {data.receitaGeral.toFixed(2)}
+                  </p>
+                  <p className="mt-0.5 text-xs text-emerald-600">
+                    monetária + contrapartida
+                  </p>
+                </div>
+                <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4">
+                  <p className="text-xs font-medium uppercase tracking-wider text-emerald-700">
+                    Receita monetária
+                  </p>
+                  <p className="mt-1 text-xl font-semibold text-emerald-800">
+                    R$ {data.receitaMonetaria.toFixed(2)}
+                  </p>
+                </div>
+                <div className="rounded-lg border border-violet-200 bg-violet-50/80 p-4">
+                  <p className="text-xs font-medium uppercase tracking-wider text-violet-700">
+                    Receita contrapartida
+                  </p>
+                  <p className="mt-1 text-xl font-semibold text-violet-800">
+                    R$ {data.receitaContrapartida.toFixed(2)}
+                  </p>
+                  <p className="mt-0.5 text-xs text-violet-600">
+                    material / equivalente
                   </p>
                 </div>
                 <div className="rounded-lg border border-amber-200 bg-amber-50/80 p-4">
@@ -259,6 +287,9 @@ export function ReportsPage() {
                   </p>
                   <p className="mt-1 text-xl font-semibold text-blue-800">
                     R$ {data.receitaLiquida.toFixed(2)}
+                  </p>
+                  <p className="mt-0.5 text-xs text-blue-600">
+                    só monetária − custo
                   </p>
                 </div>
               </div>
@@ -477,10 +508,19 @@ function buildReports(tickets: Ticket[]): ReportsData {
       t.tipo === 'externa' &&
       statusAprovadoOuApos.includes(t.status as (typeof statusAprovadoOuApos)[number]),
   )
-  const receitaTotalExternas = demandasAprovadasOuApos.reduce(
-    (sum, t) => sum + (t.valor_demanda ?? t.orcamento?.total ?? 0),
+  const valor = (t: (typeof demandasAprovadasOuApos)[number]) =>
+    t.valor_demanda ?? t.orcamento?.total ?? 0
+  const receitaMonetaria = demandasAprovadasOuApos.reduce(
+    (sum, t) =>
+      sum + (t.tipo_receita === 'contrapartida' ? 0 : valor(t)),
     0,
   )
+  const receitaContrapartida = demandasAprovadasOuApos.reduce(
+    (sum, t) =>
+      sum + (t.tipo_receita === 'contrapartida' ? valor(t) : 0),
+    0,
+  )
+  const receitaGeral = receitaMonetaria + receitaContrapartida
   const demandasParaCusto = tickets.filter((t) =>
     statusAprovadoOuApos.includes(t.status as (typeof statusAprovadoOuApos)[number]),
   )
@@ -488,11 +528,13 @@ function buildReports(tickets: Ticket[]): ReportsData {
     (sum, t) => sum + (t.custo ?? 0),
     0,
   )
-  const receitaLiquida = receitaTotalExternas - custoTotal
+  const receitaLiquida = receitaMonetaria - custoTotal
 
   return {
     totalPorResponsavelSemana,
-    receitaTotalExternas,
+    receitaMonetaria,
+    receitaContrapartida,
+    receitaGeral,
     custoTotal,
     receitaLiquida,
   }
