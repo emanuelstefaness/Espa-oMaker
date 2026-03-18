@@ -69,6 +69,8 @@ export interface Ticket {
   data_entrega?: string | null
   atraso?: boolean
   valor_demanda?: number | null
+  /** Data/hora em que o orçamento foi marcado como pago (null = não pago) */
+  orcamento_pago_em?: string | null
   /** Receita monetária ou contrapartida (ex.: material) */
   tipo_receita?: 'monetaria' | 'contrapartida' | null
   /** Material da contrapartida quando tipo_receita = contrapartida */

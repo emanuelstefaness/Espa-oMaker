@@ -87,6 +87,7 @@ export async function listTickets(
       status_orcamento,
       sem_cobranca,
       valor_demanda,
+      orcamento_pago_em,
       tipo_receita,
       contrapartida_material,
       contrapartida_quantidade,
@@ -213,7 +214,9 @@ export async function getTriagemUnreadCount(sinceDate: string): Promise<number> 
     .from('tickets')
     .select('id', { count: 'exact', head: true })
     .is('excluida_em', null)
-    .eq('status', 'recebida')
+    .eq('status', 'aprovado')
+    .is('responsavel_id', null)
+    .not('orcamento_pago_em', 'is', null)
     .gt('data_criacao', sinceDate)
 
   if (error) return 0
@@ -253,6 +256,7 @@ export async function getTicket(id: string): Promise<Ticket | null> {
   status_orcamento,
   sem_cobranca,
   valor_demanda,
+  orcamento_pago_em,
   tipo_receita,
   contrapartida_material,
   contrapartida_quantidade,
@@ -397,10 +401,26 @@ const TICKET_SELECT_WITH_RESPONSAVEL = `
   status_orcamento,
   sem_cobranca,
   valor_demanda,
+  orcamento_pago_em,
   nivel_dificuldade,
   excluida_em,
   responsavel:responsavel_id ( id, name, avatar_url )
 `
+
+export async function setTicketOrcamentoPago(
+  id: string,
+  pago: boolean,
+): Promise<Ticket> {
+  const { data, error } = await supabase
+    .from('tickets')
+    .update({ orcamento_pago_em: pago ? new Date().toISOString() : null })
+    .eq('id', id)
+    .select(TICKET_SELECT_WITH_RESPONSAVEL)
+    .single()
+
+  if (error) throw error
+  return mapRowToTicket(data)
+}
 
 export async function updateTicketStatus(
   id: string,
@@ -1148,6 +1168,7 @@ function mapRowToTicket(row: any): Ticket {
     data_criacao: row.data_criacao,
     data_entrega: row.data_entrega ?? null,
     valor_demanda: row.valor_demanda != null ? Number(row.valor_demanda) : null,
+    orcamento_pago_em: row.orcamento_pago_em ?? null,
     tipo_receita: row.tipo_receita ?? null,
     contrapartida_material: row.contrapartida_material ?? null,
     contrapartida_quantidade:

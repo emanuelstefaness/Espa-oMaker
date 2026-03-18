@@ -24,16 +24,19 @@ export function InboxTriagemPage() {
         setLoading(true)
         setError(null)
         const [ticketsResult, usersData] = await Promise.all([
-          listTickets({ status: 'recebida' }, { limit: 500 }),
+          listTickets({ status: 'aprovado' }, { limit: 500 }),
           listAppUsers(),
         ])
-        setTickets(ticketsResult.tickets)
+        const ready = ticketsResult.tickets.filter(
+          (t) => !t.responsavel_id && !!t.orcamento_pago_em,
+        )
+        setTickets(ready)
         setExecutores(usersData)
       } catch (err) {
         const raw =
           err && typeof err === 'object' && 'message' in err
             ? String((err as Error).message)
-            : 'Erro ao carregar recebidas.'
+            : 'Erro ao carregar demandas para triagem.'
         setError(raw)
       } finally {
         setLoading(false)
@@ -80,10 +83,10 @@ export function InboxTriagemPage() {
       <section className="space-y-6">
         <header>
           <h1 className="text-2xl font-semibold text-slate-800">
-            Caixa de entrada
+            Triagem (atribuir responsável)
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Triagem de demandas recebidas. Atribua o responsável para seguir o fluxo.
+            Somente demandas com orçamento aprovado e pago entram aqui para definição do responsável.
           </p>
         </header>
 
@@ -102,7 +105,7 @@ export function InboxTriagemPage() {
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 px-4 py-3">
             <span className="text-sm font-medium text-slate-600">
-              {tickets.length} demandas recebidas
+              {tickets.length} demandas prontas para atribuição
             </span>
           </div>
           {loading ? (
@@ -146,7 +149,9 @@ export function InboxTriagemPage() {
                     </select>
                     <button
                       type="button"
-                      disabled={!isFelipe || savingId === ticket.id}
+                      disabled={
+                        !isFelipe || savingId === ticket.id
+                      }
                       onClick={() => handleAtribuir(ticket.id)}
                       className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
                     >
@@ -159,7 +164,7 @@ export function InboxTriagemPage() {
           )}
           {!loading && tickets.length === 0 && (
             <div className="px-4 py-8 text-center text-sm text-slate-500">
-              Nenhuma demanda nova na caixa de entrada.
+              Nenhuma demanda pronta para atribuição.
             </div>
           )}
         </div>

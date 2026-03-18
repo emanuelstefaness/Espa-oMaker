@@ -7,6 +7,7 @@ import { TicketListPage } from './screens/TicketListPage'
 import { TicketDetailPage } from './screens/TicketDetailPage'
 import { NewTicketPage } from './screens/NewTicketPage'
 import { InboxTriagemPage } from './screens/InboxTriagemPage'
+import { OrcamentosPage } from './screens/OrcamentosPage'
 import { ReadyGalleryPage } from './screens/ReadyGalleryPage'
 import { ReportsPage } from './screens/ReportsPage'
 import { SolicitarPage } from './screens/SolicitarPage'
@@ -85,6 +86,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <InboxTriagemPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/orcamentos"
+            element={
+              <ProtectedRoute>
+                <OrcamentosPage />
               </ProtectedRoute>
             }
           />

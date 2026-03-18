@@ -136,8 +136,22 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
                 }`
               }
             >
-              Caixa de entrada
+              Triagem (atribuir)
               <NavBadge count={unread.triagem} />
+            </NavLink>
+          )}
+          {isFelipe && (
+            <NavLink
+              to="/orcamentos"
+              className={({ isActive }) =>
+                `flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-amber-50 text-amber-800'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`
+              }
+            >
+              Orçamentos
             </NavLink>
           )}
           <NavLink
