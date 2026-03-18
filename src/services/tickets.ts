@@ -8,6 +8,23 @@ import type {
   TicketOrigem,
 } from '../types/ticket'
 
+function extractMissingColumnName(message: string): string | null {
+  const m = message.match(
+    /column\s+([a-zA-Z0-9_]+\.)?("?)([a-zA-Z0-9_]+)\2\s+does not exist/i,
+  )
+  return m?.[3] ?? null
+}
+
+function isMissingColumnError(err: unknown): err is { message: string } {
+  return !!(
+    err &&
+    typeof err === 'object' &&
+    'message' in err &&
+    typeof (err as any).message === 'string' &&
+    /column .* does not exist/i.test(String((err as any).message))
+  )
+}
+
 export interface TicketFilters {
   search?: string
   status?: TicketStatus | 'atrasadas' | 'prazo_hoje'
@@ -46,6 +63,56 @@ export interface ListTicketsResult {
 const DEFAULT_PAGE_SIZE = 100
 const MAX_PAGE_SIZE = 5000
 
+const TICKETS_SELECT_BASE = `
+  id,
+  codigo,
+  titulo,
+  descricao,
+  tipo,
+  origem,
+  solicitante_nome,
+  solicitante_telefone,
+  categoria,
+  prioridade,
+  status,
+  responsavel_id,
+  colaborador_id,
+  data_criacao,
+  data_entrega,
+  material_impressao,
+  cor,
+  quantidade_pecas,
+  tamanho_escala,
+  observacoes_tecnicas,
+  preco_por_peca,
+  quantidade_orcamento,
+  total_orcamento,
+  desconto,
+  observacoes_orcamento,
+  status_orcamento,
+  sem_cobranca,
+  valor_demanda,
+  tipo_receita,
+  contrapartida_material,
+  contrapartida_quantidade,
+  custo,
+  nivel_dificuldade,
+  excluida_em,
+  responsavel:responsavel_id ( id, name, avatar_url )
+`
+
+const TICKETS_SELECT_EXTENDED = `
+  ${TICKETS_SELECT_BASE},
+  orcamento_pago_em,
+  pagamento_tipo,
+  pagamento_data,
+  pagamento_pago_em,
+  receita_recorrente,
+  receita_recorrente_dia_pagamento,
+  receita_recorrente_inicio,
+  receita_recorrente_fim
+`
+
 export async function listTickets(
   filters: TicketFilters = {},
   options: ListTicketsOptions = {},
@@ -56,147 +123,108 @@ export async function listTickets(
   )
   const offset = options.offset ?? 0
   const fetchSize = limit + 1
+  const run = async (select: string): Promise<ListTicketsResult> => {
+    let query = supabase.from('tickets').select(select)
 
-  let query = supabase.from('tickets').select(
-    `
-      id,
-      codigo,
-      titulo,
-      descricao,
-      tipo,
-      origem,
-      solicitante_nome,
-      solicitante_telefone,
-      categoria,
-      prioridade,
-      status,
-      responsavel_id,
-      colaborador_id,
-      data_criacao,
-      data_entrega,
-      material_impressao,
-      cor,
-      quantidade_pecas,
-      tamanho_escala,
-      observacoes_tecnicas,
-      preco_por_peca,
-      quantidade_orcamento,
-      total_orcamento,
-      desconto,
-      observacoes_orcamento,
-      status_orcamento,
-      sem_cobranca,
-      valor_demanda,
-      orcamento_pago_em,
-      pagamento_tipo,
-      pagamento_data,
-      pagamento_pago_em,
-      receita_recorrente,
-      receita_recorrente_dia_pagamento,
-      receita_recorrente_inicio,
-      receita_recorrente_fim,
-      tipo_receita,
-      contrapartida_material,
-      contrapartida_quantidade,
-      custo,
-      nivel_dificuldade,
-      excluida_em,
-      responsavel:responsavel_id ( id, name, avatar_url )
-    `,
-  )
+    query = query.is('excluida_em', null)
 
-  query = query.is('excluida_em', null)
+    const hoje = new Date().toISOString().slice(0, 10)
+    if (filters.statusIn?.length) {
+      query = query.in('status', filters.statusIn)
+    } else if (filters.status === 'atrasadas') {
+      query = query
+        .lt('data_entrega', hoje)
+        .neq('status', 'entregue')
+        .neq('status', 'cancelada')
+    } else if (filters.status && filters.status !== 'prazo_hoje') {
+      query = query.eq('status', filters.status)
+    }
 
-  const hoje = new Date().toISOString().slice(0, 10)
-  if (filters.statusIn?.length) {
-    query = query.in('status', filters.statusIn)
-  } else if (filters.status === 'atrasadas') {
-    query = query
-      .lt('data_entrega', hoje)
-      .neq('status', 'entregue')
-      .neq('status', 'cancelada')
-  } else if (filters.status && filters.status !== 'prazo_hoje') {
-    query = query.eq('status', filters.status)
+    if (
+      !filters.includeCancelada &&
+      filters.status !== 'cancelada' &&
+      !filters.statusIn?.length
+    ) {
+      query = query.neq('status', 'cancelada')
+    }
+
+    if (filters.responsavelOuColaboradorId) {
+      query = query.or(
+        `responsavel_id.eq.${filters.responsavelOuColaboradorId},colaborador_id.eq.${filters.responsavelOuColaboradorId}`,
+      )
+    } else if (filters.responsavelId) {
+      query = query.eq('responsavel_id', filters.responsavelId)
+    }
+
+    if (filters.prioridade) {
+      query = query.eq('prioridade', filters.prioridade)
+    }
+
+    if (filters.categoria) {
+      query = query.eq('categoria', filters.categoria)
+    }
+
+    if (filters.tipo) {
+      query = query.eq('tipo', filters.tipo)
+    }
+
+    if (filters.origem) {
+      query = query.eq('origem', filters.origem)
+    }
+
+    if (filters.dataInicial) {
+      query = query.gte('data_entrega', filters.dataInicial)
+    }
+    if (filters.dataFinal) {
+      query = query.lte('data_entrega', filters.dataFinal)
+    }
+
+    if (filters.dataCriacaoInicial) {
+      query = query.gte('data_criacao', filters.dataCriacaoInicial)
+    }
+    if (filters.dataCriacaoFinal) {
+      query = query.lte('data_criacao', filters.dataCriacaoFinal)
+    }
+
+    if (filters.search) {
+      const term = `%${filters.search}%`
+      query = query.or(
+        `titulo.ilike.${term},descricao.ilike.${term},solicitante_nome.ilike.${term},codigo.ilike.${term}`,
+      )
+    }
+
+    const orderBy = options.orderBy ?? 'data_criacao'
+    const orderDir =
+      options.orderDirection ?? (orderBy === 'data_entrega' ? 'asc' : 'desc')
+    const ascending = orderDir === 'asc'
+
+    if (orderBy === 'data_entrega') {
+      query = query.order('data_entrega', {
+        ascending,
+        nullsFirst: !ascending,
+      })
+    } else {
+      query = query.order('data_criacao', { ascending: false })
+    }
+
+    const { data, error } = await query.range(offset, offset + fetchSize - 1)
+    if (error) throw error
+
+    const rows = data ?? []
+    const hasMore = rows.length > limit
+    const page = rows.slice(0, limit)
+    const tickets = page.map(mapRowToTicket)
+    return { tickets, hasMore }
   }
 
-  if (
-    !filters.includeCancelada &&
-    filters.status !== 'cancelada' &&
-    !filters.statusIn?.length
-  ) {
-    query = query.neq('status', 'cancelada')
+  try {
+    return await run(TICKETS_SELECT_EXTENDED)
+  } catch (err) {
+    if (isMissingColumnError(err)) {
+      return await run(TICKETS_SELECT_BASE)
+    }
+    throw err
   }
-
-  if (filters.responsavelOuColaboradorId) {
-    query = query.or(
-      `responsavel_id.eq.${filters.responsavelOuColaboradorId},colaborador_id.eq.${filters.responsavelOuColaboradorId}`,
-    )
-  } else if (filters.responsavelId) {
-    query = query.eq('responsavel_id', filters.responsavelId)
-  }
-
-  if (filters.prioridade) {
-    query = query.eq('prioridade', filters.prioridade)
-  }
-
-  if (filters.categoria) {
-    query = query.eq('categoria', filters.categoria)
-  }
-
-  if (filters.tipo) {
-    query = query.eq('tipo', filters.tipo)
-  }
-
-  if (filters.origem) {
-    query = query.eq('origem', filters.origem)
-  }
-
-  if (filters.dataInicial) {
-    query = query.gte('data_entrega', filters.dataInicial)
-  }
-  if (filters.dataFinal) {
-    query = query.lte('data_entrega', filters.dataFinal)
-  }
-
-  if (filters.dataCriacaoInicial) {
-    query = query.gte('data_criacao', filters.dataCriacaoInicial)
-  }
-  if (filters.dataCriacaoFinal) {
-    query = query.lte('data_criacao', filters.dataCriacaoFinal)
-  }
-
-  if (filters.search) {
-    const term = `%${filters.search}%`
-    query = query.or(
-      `titulo.ilike.${term},descricao.ilike.${term},solicitante_nome.ilike.${term},codigo.ilike.${term}`,
-    )
-  }
-
-  const orderBy = options.orderBy ?? 'data_criacao'
-  const orderDir = options.orderDirection ?? (orderBy === 'data_entrega' ? 'asc' : 'desc')
-  const ascending = orderDir === 'asc'
-
-  if (orderBy === 'data_entrega') {
-    query = query.order('data_entrega', {
-      ascending,
-      nullsFirst: !ascending,
-    })
-  } else {
-    query = query.order('data_criacao', { ascending: false })
-  }
-
-  const { data, error } = await query.range(offset, offset + fetchSize - 1)
-
-  if (error) {
-    throw error
-  }
-
-  const rows = data ?? []
-  const hasMore = rows.length > limit
-  const page = rows.slice(0, limit)
-  const tickets = page.map(mapRowToTicket)
-
-  return { tickets, hasMore }
 }
 
 /** Quantidade de demandas em que o usuário é resp/colab criadas após a data (YYYY-MM-DD). Para badge de não lidos. */
@@ -229,64 +257,28 @@ export async function getTriagemUnreadCount(sinceDate: string): Promise<number> 
 }
 
 export async function getTicket(id: string): Promise<Ticket | null> {
-  const { data, error } = await supabase
-    .from('tickets')
-    .select(
-      `
-        id,
-        codigo,
-        titulo,
-        descricao,
-        tipo,
-        origem,
-        solicitante_nome,
-        solicitante_telefone,
-        categoria,
-        prioridade,
-        status,
-        responsavel_id,
-        colaborador_id,
-        data_criacao,
-        data_entrega,
-        material_impressao,
-        cor,
-        quantidade_pecas,
-        tamanho_escala,
-        observacoes_tecnicas,
-        preco_por_peca,
-        quantidade_orcamento,
-        total_orcamento,
-        desconto,
-        observacoes_orcamento,
-  status_orcamento,
-  sem_cobranca,
-  valor_demanda,
-  orcamento_pago_em,
-  pagamento_tipo,
-  pagamento_data,
-  pagamento_pago_em,
-  receita_recorrente,
-  receita_recorrente_dia_pagamento,
-  receita_recorrente_inicio,
-  receita_recorrente_fim,
-  tipo_receita,
-  contrapartida_material,
-  contrapartida_quantidade,
-  custo,
-  nivel_dificuldade,
-  excluida_em,
-  responsavel:responsavel_id ( id, name, avatar_url )
-  `,
-    )
-    .eq('id', id)
-    .single()
+  const run = async (select: string): Promise<Ticket | null> => {
+    const { data, error } = await supabase
+      .from('tickets')
+      .select(select)
+      .eq('id', id)
+      .single()
 
-  if (error) {
-    if (error.code === 'PGRST116') return null
-    throw error
+    if (error) {
+      if (error.code === 'PGRST116') return null
+      throw error
+    }
+    return mapRowToTicket(data)
   }
 
-  return mapRowToTicket(data)
+  try {
+    return await run(TICKETS_SELECT_EXTENDED)
+  } catch (err) {
+    if (isMissingColumnError(err)) {
+      return await run(TICKETS_SELECT_BASE)
+    }
+    throw err
+  }
 }
 
 /** Marca a demanda como excluída (some das listas; na página fica só leitura). Exclui as tasks da demanda. */
@@ -342,9 +334,7 @@ export interface CreateTicketInput {
 }
 
 export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
-  const { data, error } = await supabase
-    .from('tickets')
-    .insert({
+  const payload: Record<string, unknown> = {
       titulo: input.titulo,
       descricao: input.descricao,
       tipo: input.tipo,
@@ -355,12 +345,19 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
       prioridade: input.prioridade,
       data_entrega: input.data_entrega ?? null,
       valor_demanda: input.valor_demanda ?? null,
-      pagamento_tipo: input.pagamento_tipo ?? 'avista',
-      pagamento_data: input.pagamento_data ?? null,
-      receita_recorrente: input.receita_recorrente ?? false,
-      receita_recorrente_dia_pagamento: input.receita_recorrente_dia_pagamento ?? null,
-      receita_recorrente_inicio: input.receita_recorrente_inicio ?? null,
-      receita_recorrente_fim: input.receita_recorrente_fim ?? null,
+      // Campos novos: não força default para manter compatibilidade com bancos antigos.
+      ...(input.pagamento_tipo !== undefined ? { pagamento_tipo: input.pagamento_tipo } : {}),
+      ...(input.pagamento_data !== undefined ? { pagamento_data: input.pagamento_data } : {}),
+      ...(input.receita_recorrente !== undefined ? { receita_recorrente: input.receita_recorrente } : {}),
+      ...(input.receita_recorrente_dia_pagamento !== undefined
+        ? { receita_recorrente_dia_pagamento: input.receita_recorrente_dia_pagamento }
+        : {}),
+      ...(input.receita_recorrente_inicio !== undefined
+        ? { receita_recorrente_inicio: input.receita_recorrente_inicio }
+        : {}),
+      ...(input.receita_recorrente_fim !== undefined
+        ? { receita_recorrente_fim: input.receita_recorrente_fim }
+        : {}),
       tipo_receita: input.tipo_receita ?? 'monetaria',
       contrapartida_material: input.contrapartida_material ?? null,
       contrapartida_quantidade: input.contrapartida_quantidade ?? null,
@@ -380,15 +377,31 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
       observacoes_orcamento: input.observacoes_orcamento ?? null,
       status_orcamento: input.status_orcamento ?? null,
       sem_cobranca: input.sem_cobranca ?? false,
-    })
-    .select()
-    .single()
+    }
 
-  if (error) {
-    throw error
+  const insertTry = async (p: Record<string, unknown>) => {
+    const { data, error } = await supabase
+      .from('tickets')
+      .insert(p)
+      .select()
+      .single()
+    if (error) throw error
+    return mapRowToTicket(data)
   }
 
-  return mapRowToTicket(data)
+  try {
+    return await insertTry(payload)
+  } catch (err) {
+    if (isMissingColumnError(err)) {
+      const col = extractMissingColumnName(err.message)
+      if (col && col in payload) {
+        const next = { ...payload }
+        delete (next as any)[col]
+        return await insertTry(next)
+      }
+    }
+    throw err
+  }
 }
 
 export interface UpdateTicketStatusInput {
