@@ -140,7 +140,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
               <NavBadge count={unread.triagem} />
             </NavLink>
           )}
-          {isFelipe && (
+          {(isFelipe || appUser?.role === 'executor') && (
             <NavLink
               to="/atribuir"
               className={({ isActive }) =>

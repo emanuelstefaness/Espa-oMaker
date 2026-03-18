@@ -32,10 +32,9 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
-const FELIPE_EMAIL = 'felipe@espacomaker.local'
-
 function mapRole(email: string): AppUserRole {
-  if (email === FELIPE_EMAIL) {
+  const localPart = (email.split('@')[0] ?? '').toLowerCase()
+  if (localPart === 'felipe') {
     return 'felipe'
   }
   return 'executor'
