@@ -88,6 +88,8 @@ export async function listTickets(
       sem_cobranca,
       valor_demanda,
       orcamento_pago_em,
+      pagamento_tipo,
+      pagamento_data,
       tipo_receita,
       contrapartida_material,
       contrapartida_quantidade,
@@ -255,6 +257,8 @@ export async function getTicket(id: string): Promise<Ticket | null> {
   sem_cobranca,
   valor_demanda,
   orcamento_pago_em,
+  pagamento_tipo,
+  pagamento_data,
   tipo_receita,
   contrapartida_material,
   contrapartida_quantidade,
@@ -304,6 +308,8 @@ export interface CreateTicketInput {
   prioridade: TicketPrioridade
   data_entrega?: string
   valor_demanda?: number | null
+  pagamento_tipo?: 'avista' | 'a_definir' | null
+  pagamento_data?: string | null
   tipo_receita?: 'monetaria' | 'contrapartida' | null
   contrapartida_material?: string | null
   contrapartida_quantidade?: number | null
@@ -335,6 +341,8 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
       prioridade: input.prioridade,
       data_entrega: input.data_entrega ?? null,
       valor_demanda: input.valor_demanda ?? null,
+      pagamento_tipo: input.pagamento_tipo ?? 'avista',
+      pagamento_data: input.pagamento_data ?? null,
       tipo_receita: input.tipo_receita ?? 'monetaria',
       contrapartida_material: input.contrapartida_material ?? null,
       contrapartida_quantidade: input.contrapartida_quantidade ?? null,
@@ -400,6 +408,8 @@ const TICKET_SELECT_WITH_RESPONSAVEL = `
   sem_cobranca,
   valor_demanda,
   orcamento_pago_em,
+  pagamento_tipo,
+  pagamento_data,
   nivel_dificuldade,
   excluida_em,
   responsavel:responsavel_id ( id, name, avatar_url )
@@ -451,6 +461,8 @@ export interface UpdateTicketDadosInput {
   prioridade?: TicketPrioridade
   data_entrega?: string | null
   valor_demanda?: number | null
+  pagamento_tipo?: 'avista' | 'a_definir' | null
+  pagamento_data?: string | null
   tipo_receita?: 'monetaria' | 'contrapartida' | null
   contrapartida_material?: string | null
   contrapartida_quantidade?: number | null
@@ -489,6 +501,10 @@ export async function updateTicketDados(
     updatePayload.observacoes_tecnicas = payload.observacoes_tecnicas
   if (payload.valor_demanda !== undefined)
     updatePayload.valor_demanda = payload.valor_demanda
+  if (payload.pagamento_tipo !== undefined)
+    updatePayload.pagamento_tipo = payload.pagamento_tipo
+  if (payload.pagamento_data !== undefined)
+    updatePayload.pagamento_data = payload.pagamento_data
   if (payload.tipo_receita !== undefined)
     updatePayload.tipo_receita = payload.tipo_receita
   if (payload.contrapartida_material !== undefined)
@@ -1167,6 +1183,8 @@ function mapRowToTicket(row: any): Ticket {
     data_entrega: row.data_entrega ?? null,
     valor_demanda: row.valor_demanda != null ? Number(row.valor_demanda) : null,
     orcamento_pago_em: row.orcamento_pago_em ?? null,
+    pagamento_tipo: row.pagamento_tipo ?? null,
+    pagamento_data: row.pagamento_data ?? null,
     tipo_receita: row.tipo_receita ?? null,
     contrapartida_material: row.contrapartida_material ?? null,
     contrapartida_quantidade:

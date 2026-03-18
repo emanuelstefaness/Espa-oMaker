@@ -114,6 +114,8 @@ export function TicketDetailPage() {
     tamanho_escala: '',
     observacoes_tecnicas: '',
     valor_demanda: '' as number | '',
+    pagamento_tipo: 'avista' as 'avista' | 'a_definir',
+    pagamento_data: '',
     tipo_receita: 'monetaria' as 'monetaria' | 'contrapartida',
     contrapartida_material: '',
     contrapartida_quantidade: '' as number | '',
@@ -427,6 +429,8 @@ export function TicketDetailPage() {
       observacoes_tecnicas:
         ticket.impressao3d?.observacoes_tecnicas ?? '',
       valor_demanda: ticket.valor_demanda ?? ('' as number | ''),
+      pagamento_tipo: (ticket.pagamento_tipo ?? 'avista') as 'avista' | 'a_definir',
+      pagamento_data: ticket.pagamento_data ?? '',
       tipo_receita: ticket.tipo_receita ?? 'monetaria',
       contrapartida_material: ticket.contrapartida_material ?? '',
       contrapartida_quantidade:
@@ -475,6 +479,11 @@ export function TicketDetailPage() {
         valor_demanda:
           formDados.valor_demanda !== ''
             ? Number(formDados.valor_demanda)
+            : null,
+        pagamento_tipo: formDados.pagamento_tipo,
+        pagamento_data:
+          formDados.pagamento_tipo === 'a_definir'
+            ? (formDados.pagamento_data || null)
             : null,
         tipo_receita: formDados.tipo_receita,
         contrapartida_material:
@@ -770,6 +779,67 @@ export function TicketDetailPage() {
                       placeholder="0,00"
                     />
                   </div>
+                  {formDados.tipo_receita === 'monetaria' && (
+                    <div className="md:col-span-2">
+                      <label className="mb-1 block text-xs font-medium text-slate-600">
+                        Pagamento
+                      </label>
+                      <div className="grid gap-3 md:grid-cols-3">
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="pagamento_tipo"
+                            checked={formDados.pagamento_tipo === 'avista'}
+                            onChange={() =>
+                              setFormDados((p) => ({
+                                ...p,
+                                pagamento_tipo: 'avista',
+                                pagamento_data: '',
+                              }))
+                            }
+                            className="rounded border-slate-300"
+                          />
+                          <span className="text-sm">À vista</span>
+                        </label>
+                        <label className="flex items-center gap-2">
+                          <input
+                            type="radio"
+                            name="pagamento_tipo"
+                            checked={formDados.pagamento_tipo === 'a_definir'}
+                            onChange={() =>
+                              setFormDados((p) => ({
+                                ...p,
+                                pagamento_tipo: 'a_definir',
+                              }))
+                            }
+                            className="rounded border-slate-300"
+                          />
+                          <span className="text-sm">A definir</span>
+                        </label>
+                        <div>
+                          <label className="sr-only">Data de pagamento</label>
+                          <input
+                            type="date"
+                            value={formDados.pagamento_data}
+                            onChange={(e) =>
+                              setFormDados((p) => ({
+                                ...p,
+                                pagamento_data: e.target.value,
+                              }))
+                            }
+                            disabled={formDados.pagamento_tipo !== 'a_definir'}
+                            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:opacity-60"
+                          />
+                        </div>
+                      </div>
+                      {formDados.pagamento_tipo === 'a_definir' &&
+                        !formDados.pagamento_data && (
+                          <p className="mt-1 text-xs text-rose-700">
+                            Informe a data de pagamento para “A definir”.
+                          </p>
+                        )}
+                    </div>
+                  )}
                   {formDados.tipo_receita === 'contrapartida' && (
                     <>
                       <div>

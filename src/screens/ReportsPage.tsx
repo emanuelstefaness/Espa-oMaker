@@ -479,6 +479,7 @@ export function ReportsPage() {
 
 function buildReports(tickets: Ticket[]): ReportsData {
   const now = new Date()
+  const hoje = now.toISOString().slice(0, 10)
   const weekAgo = new Date(now)
   weekAgo.setDate(now.getDate() - 7)
 
@@ -503,10 +504,20 @@ function buildReports(tickets: Ticket[]): ReportsData {
     'pronta',
     'entregue',
   ] as const
+  const isReceitaFutura = (t: Ticket) => {
+    // Se tiver data de pagamento definida e for maior que hoje, não contabiliza ainda.
+    // Se não tiver data definida (à vista / legado), considera a data de criação.
+    const data = t.pagamento_data || t.data_criacao?.slice(0, 10) || ''
+    return data !== '' && data > hoje
+  }
+
   const demandasAprovadasOuApos = tickets.filter(
     (t) =>
       t.tipo === 'externa' &&
-      statusAprovadoOuApos.includes(t.status as (typeof statusAprovadoOuApos)[number]),
+      statusAprovadoOuApos.includes(
+        t.status as (typeof statusAprovadoOuApos)[number],
+      ) &&
+      !isReceitaFutura(t),
   )
   const valor = (t: (typeof demandasAprovadasOuApos)[number]) =>
     t.valor_demanda ?? t.orcamento?.total ?? 0

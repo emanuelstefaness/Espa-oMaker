@@ -29,6 +29,10 @@ export function NewTicketPage() {
   const [prioridade, setPrioridade] = useState<TicketPrioridade>('media')
   const [dataEntrega, setDataEntrega] = useState('')
   const [valorDemanda, setValorDemanda] = useState<number | ''>('')
+  const [pagamentoTipo, setPagamentoTipo] = useState<'avista' | 'a_definir'>(
+    'avista',
+  )
+  const [pagamentoData, setPagamentoData] = useState('')
   const [tipoReceita, setTipoReceita] = useState<'monetaria' | 'contrapartida'>(
     'monetaria',
   )
@@ -85,6 +89,9 @@ export function NewTicketPage() {
         prioridade,
         data_entrega: dataEntrega || undefined,
         valor_demanda: valorDemanda !== '' ? Number(valorDemanda) : undefined,
+        pagamento_tipo: pagamentoTipo,
+        pagamento_data:
+          pagamentoTipo === 'a_definir' ? pagamentoData || null : null,
         tipo_receita: tipoReceita,
         contrapartida_material:
           tipoReceita === 'contrapartida' && contrapartidaMaterial
@@ -288,6 +295,43 @@ export function NewTicketPage() {
                 placeholder="0,00"
               />
             </div>
+            {tipoReceita === 'monetaria' && (
+              <div>
+                <label className={labelClass}>Pagamento</label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      type="radio"
+                      name="pagamento_tipo"
+                      checked={pagamentoTipo === 'avista'}
+                      onChange={() => {
+                        setPagamentoTipo('avista')
+                        setPagamentoData('')
+                      }}
+                      className="rounded border-slate-300"
+                    />
+                    À vista
+                  </label>
+                  <label className="flex items-center gap-2 text-sm text-slate-700">
+                    <input
+                      type="radio"
+                      name="pagamento_tipo"
+                      checked={pagamentoTipo === 'a_definir'}
+                      onChange={() => setPagamentoTipo('a_definir')}
+                      className="rounded border-slate-300"
+                    />
+                    A definir
+                  </label>
+                </div>
+                <input
+                  type="date"
+                  value={pagamentoData}
+                  onChange={(e) => setPagamentoData(e.target.value)}
+                  disabled={pagamentoTipo !== 'a_definir'}
+                  className={`${inputClass} mt-2 disabled:opacity-60`}
+                />
+              </div>
+            )}
             {tipoReceita === 'contrapartida' && (
               <>
                 <div>

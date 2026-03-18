@@ -71,6 +71,10 @@ export interface Ticket {
   valor_demanda?: number | null
   /** Data/hora em que o orçamento foi marcado como pago (null = não pago) */
   orcamento_pago_em?: string | null
+  /** Pagamento da receita monetária: 'avista' ou 'a_definir' (com data) */
+  pagamento_tipo?: 'avista' | 'a_definir' | null
+  /** Data prevista/definida de pagamento (YYYY-MM-DD). Se futura, não conta no relatório ainda. */
+  pagamento_data?: string | null
   /** Receita monetária ou contrapartida (ex.: material) */
   tipo_receita?: 'monetaria' | 'contrapartida' | null
   /** Material da contrapartida quando tipo_receita = contrapartida */
