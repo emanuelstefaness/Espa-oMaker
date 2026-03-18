@@ -61,6 +61,7 @@ export function NewTicketPage() {
   const [error, setError] = useState<string | null>(null)
 
   const navigate = useNavigate()
+  const { appUser } = useAuth()
 
   const addAnexo = (file: File, kind: AnexoKind) => {
     setAnexos((prev) => [
