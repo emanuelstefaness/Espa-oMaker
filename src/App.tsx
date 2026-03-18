@@ -7,7 +7,7 @@ import { TicketListPage } from './screens/TicketListPage'
 import { TicketDetailPage } from './screens/TicketDetailPage'
 import { NewTicketPage } from './screens/NewTicketPage'
 import { InboxTriagemPage } from './screens/InboxTriagemPage'
-import { OrcamentosPage } from './screens/OrcamentosPage'
+import { AtribuirResponsavelPage } from './screens/AtribuirResponsavelPage'
 import { ReadyGalleryPage } from './screens/ReadyGalleryPage'
 import { ReportsPage } from './screens/ReportsPage'
 import { SolicitarPage } from './screens/SolicitarPage'
@@ -90,10 +90,10 @@ function App() {
             }
           />
           <Route
-            path="/orcamentos"
+            path="/atribuir"
             element={
               <ProtectedRoute>
-                <OrcamentosPage />
+                <AtribuirResponsavelPage />
               </ProtectedRoute>
             }
           />

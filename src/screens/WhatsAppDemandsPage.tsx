@@ -24,7 +24,7 @@ export function WhatsAppDemandsPage() {
         setError(null)
         const { tickets: data } = await listTickets(
           { origem: 'formulario' },
-          { limit: 500 },
+          { limit: 500, orderBy: 'data_criacao', orderDirection: 'desc' },
         )
         setTickets(data)
       } catch (err) {
@@ -44,6 +44,107 @@ export function WhatsAppDemandsPage() {
     }
     load()
   }, [])
+
+  const semResponsavel = tickets.filter((t) => !t.responsavel_id)
+  const comResponsavel = tickets.filter((t) => !!t.responsavel_id)
+
+  const renderTabela = (rows: Ticket[], emptyText: string) => {
+    if (loading) {
+      return (
+        <div className="p-8 text-center text-sm text-slate-500">
+          Carregando…
+        </div>
+      )
+    }
+    if (rows.length === 0) {
+      return (
+        <div className="p-8 text-center text-sm text-slate-500">
+          {emptyText}
+        </div>
+      )
+    }
+    return (
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-slate-200 bg-slate-50/80">
+              <th className="px-4 py-3 font-medium text-slate-600">
+                Demanda
+              </th>
+              <th className="px-4 py-3 font-medium text-slate-600">
+                Solicitante
+              </th>
+              <th className="px-4 py-3 font-medium text-slate-600">
+                Status
+              </th>
+              <th className="px-4 py-3 font-medium text-slate-600">
+                Responsável
+              </th>
+              <th className="px-4 py-3 font-medium text-slate-600">
+                Prazo
+              </th>
+              <th className="px-4 py-3 font-medium text-slate-600">
+                Ação
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((t) => (
+              <tr
+                key={t.id}
+                className="border-b border-slate-100 hover:bg-slate-50/50"
+              >
+                <td className="px-4 py-3">
+                  <span className="font-medium text-slate-800">
+                    {t.titulo}
+                  </span>
+                  {t.codigo && (
+                    <span className="ml-2 text-xs text-slate-400">
+                      {t.codigo}
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-3 text-slate-600">
+                  {t.solicitante_nome}
+                  {t.solicitante_telefone && (
+                    <span className="block text-xs text-slate-400">
+                      {t.solicitante_telefone}
+                    </span>
+                  )}
+                </td>
+                <td className="px-4 py-3">
+                  <TicketStatusPill status={t.status} />
+                </td>
+                <td className="px-4 py-3 text-slate-600">
+                  {t.responsavel_nome ? (
+                    <UserAvatar
+                      avatarUrl={t.responsavel_avatar_url}
+                      name={t.responsavel_nome}
+                      size="sm"
+                      showName
+                    />
+                  ) : (
+                    '—'
+                  )}
+                </td>
+                <td className="px-4 py-3 text-slate-600">
+                  {formatPrazo(t.data_entrega)}
+                </td>
+                <td className="px-4 py-3">
+                  <Link
+                    to={`/demandas/${t.id}`}
+                    className="text-blue-600 hover:underline"
+                  >
+                    Ver
+                  </Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )
+  }
 
   return (
     <LayoutShell>
@@ -66,97 +167,24 @@ export function WhatsAppDemandsPage() {
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 px-4 py-3">
             <span className="text-sm font-medium text-slate-600">
-              {tickets.length} demanda(s) do formulário
+              {semResponsavel.length} demanda(s) sem responsável
             </span>
           </div>
-          {loading ? (
-            <div className="p-8 text-center text-sm text-slate-500">
-              Carregando…
-            </div>
-          ) : tickets.length === 0 ? (
-            <div className="p-8 text-center text-sm text-slate-500">
-              Nenhuma demanda do link WhatsApp no momento.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50/80">
-                    <th className="px-4 py-3 font-medium text-slate-600">
-                      Demanda
-                    </th>
-                    <th className="px-4 py-3 font-medium text-slate-600">
-                      Solicitante
-                    </th>
-                    <th className="px-4 py-3 font-medium text-slate-600">
-                      Status
-                    </th>
-                    <th className="px-4 py-3 font-medium text-slate-600">
-                      Responsável
-                    </th>
-                    <th className="px-4 py-3 font-medium text-slate-600">
-                      Prazo
-                    </th>
-                    <th className="px-4 py-3 font-medium text-slate-600">
-                      Ação
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {tickets.map((t) => (
-                    <tr
-                      key={t.id}
-                      className="border-b border-slate-100 hover:bg-slate-50/50"
-                    >
-                      <td className="px-4 py-3">
-                        <span className="font-medium text-slate-800">
-                          {t.titulo}
-                        </span>
-                        {t.codigo && (
-                          <span className="ml-2 text-xs text-slate-400">
-                            {t.codigo}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {t.solicitante_nome}
-                        {t.solicitante_telefone && (
-                          <span className="block text-xs text-slate-400">
-                            {t.solicitante_telefone}
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3">
-                        <TicketStatusPill status={t.status} />
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {t.responsavel_nome ? (
-                          <UserAvatar
-                            avatarUrl={t.responsavel_avatar_url}
-                            name={t.responsavel_nome}
-                            size="sm"
-                            showName
-                          />
-                        ) : (
-                          '—'
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-slate-600">
-                        {formatPrazo(t.data_entrega)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <Link
-                          to={`/demandas/${t.id}`}
-                          className="text-blue-600 hover:underline"
-                        >
-                          Ver
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+          {renderTabela(
+            semResponsavel,
+            'Nenhuma demanda do link WhatsApp sem responsável no momento.',
+          )}
+        </div>
+
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-100 px-4 py-3">
+            <span className="text-sm font-medium text-slate-600">
+              {comResponsavel.length} demanda(s) com responsável
+            </span>
+          </div>
+          {renderTabela(
+            comResponsavel,
+            'Nenhuma demanda do link WhatsApp com responsável no momento.',
           )}
         </div>
       </section>

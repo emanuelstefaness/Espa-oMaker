@@ -2,14 +2,20 @@ import { useEffect, useState } from 'react'
 import { LayoutShell } from '../components/LayoutShell'
 import { TicketStatusPill } from '../components/TicketStatusPill'
 import type { Ticket } from '../types/ticket'
-import { listTickets, updateTicketStatus } from '../services/tickets'
+import { listTickets, updateTicketResponsavel } from '../services/tickets'
+import { listAppUsers } from '../services/appUsers'
+import type { AppUserOption } from '../services/appUsers'
 import { useAuth } from '../auth/AuthContext'
 
-export function InboxTriagemPage() {
+export function AtribuirResponsavelPage() {
   const [tickets, setTickets] = useState<Ticket[]>([])
+  const [executores, setExecutores] = useState<AppUserOption[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [selectedResponsavel, setSelectedResponsavel] = useState<
+    Record<string, string>
+  >({})
   const { appUser } = useAuth()
 
   useEffect(() => {
@@ -17,16 +23,18 @@ export function InboxTriagemPage() {
       try {
         setLoading(true)
         setError(null)
-        const ticketsResult = await listTickets(
-          { statusIn: ['recebida', 'orcamento_em_criacao', 'aguardando_aprovacao'] },
-          { limit: 500 },
-        )
-        setTickets(ticketsResult.tickets)
+        const [ticketsResult, usersData] = await Promise.all([
+          listTickets({ status: 'aprovado' }, { limit: 500 }),
+          listAppUsers(),
+        ])
+        const ready = ticketsResult.tickets.filter((t) => !t.responsavel_id)
+        setTickets(ready)
+        setExecutores(usersData)
       } catch (err) {
         const raw =
           err && typeof err === 'object' && 'message' in err
             ? String((err as Error).message)
-            : 'Erro ao carregar caixa de entrada.'
+            : 'Erro ao carregar demandas aprovadas.'
         setError(raw)
       } finally {
         setLoading(false)
@@ -35,14 +43,31 @@ export function InboxTriagemPage() {
     load()
   }, [])
 
-  const handleWorkflow = async (ticketId: string, status: Ticket['status']) => {
+  const handleAtribuir = async (ticketId: string) => {
+    const responsavel = selectedResponsavel[ticketId]
+    if (!responsavel) return
+    if (
+      !window.confirm(
+        'Tem certeza que deseja atribuir esta demanda? O status será alterado para "Em análise".',
+      )
+    ) {
+      return
+    }
     try {
       setSavingId(ticketId)
-      await updateTicketStatus(ticketId, { status })
+      await updateTicketResponsavel(ticketId, {
+        responsavel_id: responsavel,
+        status: 'em_analise',
+      })
       setTickets((prev) => prev.filter((t) => t.id !== ticketId))
+      setSelectedResponsavel((prev) => {
+        const next = { ...prev }
+        delete next[ticketId]
+        return next
+      })
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : 'Erro ao atualizar status.'
+        err instanceof Error ? err.message : 'Erro ao atribuir responsável.'
       setError(message)
     } finally {
       setSavingId(null)
@@ -56,16 +81,18 @@ export function InboxTriagemPage() {
       <section className="space-y-6">
         <header>
           <h1 className="text-2xl font-semibold text-slate-800">
-            Caixa de entrada
+            Definir responsável
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Workflow do orçamento. Enquanto o orçamento não for aprovado, a demanda fica aqui.
+            Demandas com status <strong>Orçamento aprovado</strong> entram aqui
+            para atribuição do responsável.
           </p>
         </header>
 
         {!isFelipe && (
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-            Apenas o usuário de triagem (Felipe) pode avançar o workflow do orçamento. Você pode visualizar.
+            Apenas o usuário de triagem (Felipe) pode atribuir responsável. Você
+            pode visualizar.
           </div>
         )}
 
@@ -78,7 +105,7 @@ export function InboxTriagemPage() {
         <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-100 px-4 py-3">
             <span className="text-sm font-medium text-slate-600">
-              {tickets.length} demandas na caixa de entrada
+              {tickets.length} demandas para atribuir
             </span>
           </div>
           {loading ? (
@@ -102,53 +129,31 @@ export function InboxTriagemPage() {
                     </div>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
+                    <select
+                      disabled={!isFelipe}
+                      value={selectedResponsavel[ticket.id] ?? ''}
+                      onChange={(e) =>
+                        setSelectedResponsavel((prev) => ({
+                          ...prev,
+                          [ticket.id]: e.target.value,
+                        }))
+                      }
+                      className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-60"
+                    >
+                      <option value="">Definir responsável</option>
+                      {executores.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name}
+                        </option>
+                      ))}
+                    </select>
                     <button
                       type="button"
                       disabled={!isFelipe || savingId === ticket.id}
-                      onClick={() => {
-                        if (
-                          !window.confirm(
-                            'Definir status como "Aguardando orçamento"?',
-                          )
-                        )
-                          return
-                        handleWorkflow(ticket.id, 'orcamento_em_criacao')
-                      }}
-                      className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+                      onClick={() => handleAtribuir(ticket.id)}
+                      className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
                     >
-                      Aguardando orçamento
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!isFelipe || savingId === ticket.id}
-                      onClick={() => {
-                        if (
-                          !window.confirm(
-                            'Definir status como "Orçamento aprovado"? A demanda sairá da caixa de entrada e irá para a seção de definir responsável.',
-                          )
-                        )
-                          return
-                        handleWorkflow(ticket.id, 'aprovado')
-                      }}
-                      className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50"
-                    >
-                      Orçamento aprovado
-                    </button>
-                    <button
-                      type="button"
-                      disabled={!isFelipe || savingId === ticket.id}
-                      onClick={() => {
-                        if (
-                          !window.confirm(
-                            'Cancelar esta demanda? Ela sairá do fluxo.',
-                          )
-                        )
-                          return
-                        handleWorkflow(ticket.id, 'cancelada')
-                      }}
-                      className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:opacity-50"
-                    >
-                      Cancelada
+                      {savingId === ticket.id ? 'Salvando...' : 'Atribuir'}
                     </button>
                   </div>
                 </li>
@@ -157,7 +162,7 @@ export function InboxTriagemPage() {
           )}
           {!loading && tickets.length === 0 && (
             <div className="px-4 py-8 text-center text-sm text-slate-500">
-              Nenhuma demanda na caixa de entrada.
+              Nenhuma demanda para atribuir.
             </div>
           )}
         </div>
@@ -165,3 +170,4 @@ export function InboxTriagemPage() {
     </LayoutShell>
   )
 }
+

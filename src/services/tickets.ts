@@ -208,15 +208,13 @@ export async function getMinhasDemandasUnreadCount(
   return count ?? 0
 }
 
-/** Quantidade de demandas em triagem (status recebida) criadas após a data (YYYY-MM-DD). Para badge de não lidos. */
+/** Quantidade de demandas na caixa de entrada (workflow de orçamento) criadas após a data (YYYY-MM-DD). Para badge de não lidos. */
 export async function getTriagemUnreadCount(sinceDate: string): Promise<number> {
   const { count, error } = await supabase
     .from('tickets')
     .select('id', { count: 'exact', head: true })
     .is('excluida_em', null)
-    .eq('status', 'aprovado')
-    .is('responsavel_id', null)
-    .not('orcamento_pago_em', 'is', null)
+    .in('status', ['recebida', 'orcamento_em_criacao', 'aguardando_aprovacao'])
     .gt('data_criacao', sinceDate)
 
   if (error) return 0

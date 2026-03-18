@@ -136,13 +136,13 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
                 }`
               }
             >
-              Triagem (atribuir)
+              Caixa de entrada
               <NavBadge count={unread.triagem} />
             </NavLink>
           )}
           {isFelipe && (
             <NavLink
-              to="/orcamentos"
+              to="/atribuir"
               className={({ isActive }) =>
                 `flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                   isActive
@@ -151,7 +151,7 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
                 }`
               }
             >
-              Orçamentos
+              Definir responsável
             </NavLink>
           )}
           <NavLink
