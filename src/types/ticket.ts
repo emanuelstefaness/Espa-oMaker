@@ -75,6 +75,8 @@ export interface Ticket {
   pagamento_tipo?: 'avista' | 'a_definir' | null
   /** Data prevista/definida de pagamento (YYYY-MM-DD). Se futura, não conta no relatório ainda. */
   pagamento_data?: string | null
+  /** Data/hora em que o pagamento foi marcado como pago (null = a ser faturada) */
+  pagamento_pago_em?: string | null
   /** Receita monetária ou contrapartida (ex.: material) */
   tipo_receita?: 'monetaria' | 'contrapartida' | null
   /** Material da contrapartida quando tipo_receita = contrapartida */

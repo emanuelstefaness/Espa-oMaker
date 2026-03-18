@@ -504,26 +504,24 @@ function buildReports(tickets: Ticket[]): ReportsData {
     'pronta',
     'entregue',
   ] as const
-  const isReceitaFutura = (t: Ticket) => {
-    // Se tiver data de pagamento definida e for maior que hoje, não contabiliza ainda.
-    // Se não tiver data definida (à vista / legado), considera a data de criação.
-    const data = t.pagamento_data || t.data_criacao?.slice(0, 10) || ''
-    return data !== '' && data > hoje
-  }
-
   const demandasAprovadasOuApos = tickets.filter(
     (t) =>
       t.tipo === 'externa' &&
       statusAprovadoOuApos.includes(
         t.status as (typeof statusAprovadoOuApos)[number],
       ) &&
-      !isReceitaFutura(t),
+      true,
   )
   const valor = (t: (typeof demandasAprovadasOuApos)[number]) =>
     t.valor_demanda ?? t.orcamento?.total ?? 0
   const receitaMonetaria = demandasAprovadasOuApos.reduce(
     (sum, t) =>
-      sum + (t.tipo_receita === 'contrapartida' ? 0 : valor(t)),
+      sum +
+      (t.tipo_receita === 'contrapartida'
+        ? 0
+        : t.pagamento_pago_em && t.pagamento_pago_em.slice(0, 10) <= hoje
+          ? valor(t)
+          : 0),
     0,
   )
   const receitaContrapartida = demandasAprovadasOuApos.reduce(

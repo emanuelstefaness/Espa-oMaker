@@ -90,6 +90,7 @@ export async function listTickets(
       orcamento_pago_em,
       pagamento_tipo,
       pagamento_data,
+      pagamento_pago_em,
       tipo_receita,
       contrapartida_material,
       contrapartida_quantidade,
@@ -259,6 +260,7 @@ export async function getTicket(id: string): Promise<Ticket | null> {
   orcamento_pago_em,
   pagamento_tipo,
   pagamento_data,
+  pagamento_pago_em,
   tipo_receita,
   contrapartida_material,
   contrapartida_quantidade,
@@ -410,10 +412,26 @@ const TICKET_SELECT_WITH_RESPONSAVEL = `
   orcamento_pago_em,
   pagamento_tipo,
   pagamento_data,
+  pagamento_pago_em,
   nivel_dificuldade,
   excluida_em,
   responsavel:responsavel_id ( id, name, avatar_url )
 `
+
+export async function setTicketPagamentoPago(
+  id: string,
+  pago: boolean,
+): Promise<Ticket> {
+  const { data, error } = await supabase
+    .from('tickets')
+    .update({ pagamento_pago_em: pago ? new Date().toISOString() : null })
+    .eq('id', id)
+    .select(TICKET_SELECT_WITH_RESPONSAVEL)
+    .single()
+
+  if (error) throw error
+  return mapRowToTicket(data)
+}
 
 export async function setTicketOrcamentoPago(
   id: string,
@@ -463,6 +481,7 @@ export interface UpdateTicketDadosInput {
   valor_demanda?: number | null
   pagamento_tipo?: 'avista' | 'a_definir' | null
   pagamento_data?: string | null
+  pagamento_pago_em?: string | null
   tipo_receita?: 'monetaria' | 'contrapartida' | null
   contrapartida_material?: string | null
   contrapartida_quantidade?: number | null
@@ -505,6 +524,8 @@ export async function updateTicketDados(
     updatePayload.pagamento_tipo = payload.pagamento_tipo
   if (payload.pagamento_data !== undefined)
     updatePayload.pagamento_data = payload.pagamento_data
+  if (payload.pagamento_pago_em !== undefined)
+    updatePayload.pagamento_pago_em = payload.pagamento_pago_em
   if (payload.tipo_receita !== undefined)
     updatePayload.tipo_receita = payload.tipo_receita
   if (payload.contrapartida_material !== undefined)
@@ -1185,6 +1206,7 @@ function mapRowToTicket(row: any): Ticket {
     orcamento_pago_em: row.orcamento_pago_em ?? null,
     pagamento_tipo: row.pagamento_tipo ?? null,
     pagamento_data: row.pagamento_data ?? null,
+    pagamento_pago_em: row.pagamento_pago_em ?? null,
     tipo_receita: row.tipo_receita ?? null,
     contrapartida_material: row.contrapartida_material ?? null,
     contrapartida_quantidade:

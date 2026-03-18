@@ -19,6 +19,7 @@ import {
   deleteTicketFile,
   getTicket,
   setTicketExcluida,
+  setTicketPagamentoPago,
   listTicketTasks,
   createTicketTask,
   updateTicketTaskStatus,
@@ -78,6 +79,7 @@ export function TicketDetailPage() {
   const [workSessionLoading, setWorkSessionLoading] = useState(false)
   const [responsavelTriagemId, setResponsavelTriagemId] = useState<string>('')
   const [savingResponsavel, setSavingResponsavel] = useState(false)
+  const [savingPagamento, setSavingPagamento] = useState(false)
 
   const [tasks, setTasks] = useState<TicketTask[]>([])
   const [appUsers, setAppUsers] = useState<AppUserOption[]>([])
@@ -244,6 +246,22 @@ export function TicketDetailPage() {
       setError(message)
     } finally {
       setSavingResponsavel(false)
+    }
+  }
+
+  const handleTogglePagamentoPago = async (pago: boolean) => {
+    if (!id) return
+    setSavingPagamento(true)
+    setError(null)
+    try {
+      const updated = await setTicketPagamentoPago(id, pago)
+      setTicket(updated)
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : 'Erro ao atualizar pagamento.'
+      setError(message)
+    } finally {
+      setSavingPagamento(false)
     }
   }
 
@@ -1071,6 +1089,57 @@ export function TicketDetailPage() {
                         '—'
                       )}
                     </Field>
+                    {ticket.tipo_receita !== 'contrapartida' && (
+                      <Field label="Faturamento">
+                        {ticket.pagamento_pago_em ? (
+                          <span className="inline-flex items-center gap-2">
+                            <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                              Pago
+                            </span>
+                            <span className="text-sm text-slate-700">
+                              {ticket.pagamento_pago_em.slice(0, 10)}
+                            </span>
+                            {isFelipe && (
+                              <button
+                                type="button"
+                                disabled={savingPagamento}
+                                onClick={() => {
+                                  if (!window.confirm('Desmarcar como pago?')) return
+                                  handleTogglePagamentoPago(false)
+                                }}
+                                className="rounded-md border border-slate-200 bg-white px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50"
+                              >
+                                Desmarcar pago
+                              </button>
+                            )}
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-2">
+                            <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-semibold text-amber-800">
+                              A ser faturada
+                            </span>
+                            {ticket.pagamento_data && (
+                              <span className="text-sm text-slate-600">
+                                Previsto: {ticket.pagamento_data}
+                              </span>
+                            )}
+                            {isFelipe && (
+                              <button
+                                type="button"
+                                disabled={savingPagamento}
+                                onClick={() => {
+                                  if (!window.confirm('Marcar como pago?')) return
+                                  handleTogglePagamentoPago(true)
+                                }}
+                                className="rounded-md bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                              >
+                                Marcar como pago
+                              </button>
+                            )}
+                          </span>
+                        )}
+                      </Field>
+                    )}
                     <Field label="Custo">
                       {ticket.custo != null
                         ? `R$ ${Number(ticket.custo).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
