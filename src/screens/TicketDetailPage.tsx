@@ -118,6 +118,10 @@ export function TicketDetailPage() {
     valor_demanda: '' as number | '',
     pagamento_tipo: 'avista' as 'avista' | 'a_definir',
     pagamento_data: '',
+    receita_recorrente: false,
+    receita_recorrente_dia_pagamento: '' as number | '',
+    receita_recorrente_inicio: '',
+    receita_recorrente_fim: '',
     tipo_receita: 'monetaria' as 'monetaria' | 'contrapartida',
     contrapartida_material: '',
     contrapartida_quantidade: '' as number | '',
@@ -449,6 +453,13 @@ export function TicketDetailPage() {
       valor_demanda: ticket.valor_demanda ?? ('' as number | ''),
       pagamento_tipo: (ticket.pagamento_tipo ?? 'avista') as 'avista' | 'a_definir',
       pagamento_data: ticket.pagamento_data ?? '',
+      receita_recorrente: !!ticket.receita_recorrente,
+      receita_recorrente_dia_pagamento:
+        ticket.receita_recorrente_dia_pagamento != null
+          ? ticket.receita_recorrente_dia_pagamento
+          : ('' as number | ''),
+      receita_recorrente_inicio: ticket.receita_recorrente_inicio ?? '',
+      receita_recorrente_fim: ticket.receita_recorrente_fim ?? '',
       tipo_receita: ticket.tipo_receita ?? 'monetaria',
       contrapartida_material: ticket.contrapartida_material ?? '',
       contrapartida_quantidade:
@@ -502,6 +513,19 @@ export function TicketDetailPage() {
         pagamento_data:
           formDados.pagamento_tipo === 'a_definir'
             ? (formDados.pagamento_data || null)
+            : null,
+        receita_recorrente: formDados.tipo_receita === 'monetaria' ? formDados.receita_recorrente : false,
+        receita_recorrente_dia_pagamento:
+          formDados.tipo_receita === 'monetaria' && formDados.receita_recorrente && formDados.receita_recorrente_dia_pagamento !== ''
+            ? Number(formDados.receita_recorrente_dia_pagamento)
+            : null,
+        receita_recorrente_inicio:
+          formDados.tipo_receita === 'monetaria' && formDados.receita_recorrente
+            ? (formDados.receita_recorrente_inicio || null)
+            : null,
+        receita_recorrente_fim:
+          formDados.tipo_receita === 'monetaria' && formDados.receita_recorrente
+            ? (formDados.receita_recorrente_fim || null)
             : null,
         tipo_receita: formDados.tipo_receita,
         contrapartida_material:
@@ -856,6 +880,101 @@ export function TicketDetailPage() {
                             Informe a data de pagamento para “A definir”.
                           </p>
                         )}
+                    </div>
+                  )}
+                  {formDados.tipo_receita === 'monetaria' && (
+                    <div className="md:col-span-2">
+                      <label className="mb-1 block text-xs font-medium text-slate-600">
+                        Lançamento recorrente
+                      </label>
+                      <label className="flex items-center gap-2 text-sm text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={formDados.receita_recorrente}
+                          onChange={(e) =>
+                            setFormDados((p) => ({
+                              ...p,
+                              receita_recorrente: e.target.checked,
+                              ...(e.target.checked
+                                ? {
+                                    receita_recorrente_inicio:
+                                      p.receita_recorrente_inicio ||
+                                      new Date().toISOString().slice(0, 10),
+                                  }
+                                : {
+                                    receita_recorrente_dia_pagamento: '' as number | '',
+                                    receita_recorrente_inicio: '',
+                                    receita_recorrente_fim: '',
+                                  }),
+                            }))
+                          }
+                          className="rounded border-slate-300"
+                        />
+                        Contabilizar automaticamente todo mês
+                      </label>
+
+                      {formDados.receita_recorrente && (
+                        <div className="mt-3 grid gap-3 md:grid-cols-3">
+                          <div>
+                            <label className="mb-1 block text-xs font-medium text-slate-600">
+                              Dia do mês
+                            </label>
+                            <input
+                              type="number"
+                              min={1}
+                              max={31}
+                              value={
+                                formDados.receita_recorrente_dia_pagamento === ''
+                                  ? ''
+                                  : formDados.receita_recorrente_dia_pagamento
+                              }
+                              onChange={(e) =>
+                                setFormDados((p) => ({
+                                  ...p,
+                                  receita_recorrente_dia_pagamento:
+                                    e.target.value === ''
+                                      ? ('' as number | '')
+                                      : Number(e.target.value),
+                                }))
+                              }
+                              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                              placeholder="Ex: 10"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs font-medium text-slate-600">
+                              Início
+                            </label>
+                            <input
+                              type="date"
+                              value={formDados.receita_recorrente_inicio}
+                              onChange={(e) =>
+                                setFormDados((p) => ({
+                                  ...p,
+                                  receita_recorrente_inicio: e.target.value,
+                                }))
+                              }
+                              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                            />
+                          </div>
+                          <div>
+                            <label className="mb-1 block text-xs font-medium text-slate-600">
+                              Fim (opcional)
+                            </label>
+                            <input
+                              type="date"
+                              value={formDados.receita_recorrente_fim}
+                              onChange={(e) =>
+                                setFormDados((p) => ({
+                                  ...p,
+                                  receita_recorrente_fim: e.target.value,
+                                }))
+                              }
+                              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                            />
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                   {formDados.tipo_receita === 'contrapartida' && (

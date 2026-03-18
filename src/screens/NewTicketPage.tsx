@@ -33,6 +33,10 @@ export function NewTicketPage() {
     'avista',
   )
   const [pagamentoData, setPagamentoData] = useState('')
+  const [receitaRecorrente, setReceitaRecorrente] = useState(false)
+  const [recorrenteDia, setRecorrenteDia] = useState<number | ''>('')
+  const [recorrenteInicio, setRecorrenteInicio] = useState('')
+  const [recorrenteFim, setRecorrenteFim] = useState('')
   const [tipoReceita, setTipoReceita] = useState<'monetaria' | 'contrapartida'>(
     'monetaria',
   )
@@ -92,6 +96,11 @@ export function NewTicketPage() {
         pagamento_tipo: pagamentoTipo,
         pagamento_data:
           pagamentoTipo === 'a_definir' ? pagamentoData || null : null,
+        receita_recorrente: receitaRecorrente,
+        receita_recorrente_dia_pagamento:
+          receitaRecorrente && recorrenteDia !== '' ? Number(recorrenteDia) : null,
+        receita_recorrente_inicio: receitaRecorrente ? (recorrenteInicio || null) : null,
+        receita_recorrente_fim: receitaRecorrente ? (recorrenteFim || null) : null,
         tipo_receita: tipoReceita,
         contrapartida_material:
           tipoReceita === 'contrapartida' && contrapartidaMaterial
@@ -330,6 +339,74 @@ export function NewTicketPage() {
                   disabled={pagamentoTipo !== 'a_definir'}
                   className={`${inputClass} mt-2 disabled:opacity-60`}
                 />
+              </div>
+            )}
+            {tipoReceita === 'monetaria' && (
+              <div className="sm:col-span-2">
+                <label className={labelClass}>Lançamento recorrente</label>
+                <label className="flex items-center gap-2 text-sm text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={receitaRecorrente}
+                    onChange={(e) => {
+                      const next = e.target.checked
+                      setReceitaRecorrente(next)
+                      if (!next) {
+                        setRecorrenteDia('')
+                        setRecorrenteInicio('')
+                        setRecorrenteFim('')
+                      } else if (!recorrenteInicio) {
+                        setRecorrenteInicio(new Date().toISOString().slice(0, 10))
+                      }
+                    }}
+                    className="rounded border-slate-300"
+                  />
+                  Contabilizar automaticamente todo mês
+                </label>
+                {receitaRecorrente && (
+                  <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">
+                        Dia do mês
+                      </label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={31}
+                        value={recorrenteDia === '' ? '' : recorrenteDia}
+                        onChange={(e) =>
+                          setRecorrenteDia(
+                            e.target.value === '' ? '' : Number(e.target.value),
+                          )
+                        }
+                        className={inputClass}
+                        placeholder="Ex: 10"
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">
+                        Início
+                      </label>
+                      <input
+                        type="date"
+                        value={recorrenteInicio}
+                        onChange={(e) => setRecorrenteInicio(e.target.value)}
+                        className={inputClass}
+                      />
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-slate-700">
+                        Fim (opcional)
+                      </label>
+                      <input
+                        type="date"
+                        value={recorrenteFim}
+                        onChange={(e) => setRecorrenteFim(e.target.value)}
+                        className={inputClass}
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
             )}
             {tipoReceita === 'contrapartida' && (

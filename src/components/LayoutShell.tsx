@@ -192,6 +192,18 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
             >
               Relatórios
             </NavLink>
+            <NavLink
+              to="/relatorios/financeiro"
+              className={({ isActive }) =>
+                `ml-2 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-slate-500 hover:bg-slate-100 hover:text-slate-700'
+                }`
+              }
+            >
+              Financeiro
+            </NavLink>
           </div>
         </nav>
 

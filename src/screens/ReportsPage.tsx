@@ -504,6 +504,50 @@ function buildReports(tickets: Ticket[]): ReportsData {
     'pronta',
     'entregue',
   ] as const
+
+  const diasNoMes = (ano: number, mes1a12: number) => {
+    return new Date(ano, mes1a12, 0).getDate()
+  }
+
+  const countRecorrenciasAteHoje = (t: Ticket): number => {
+    if (
+      !t.receita_recorrente ||
+      t.tipo_receita === 'contrapartida' ||
+      !t.receita_recorrente_inicio ||
+      !t.receita_recorrente_dia_pagamento
+    ) {
+      return 0
+    }
+    const start = t.receita_recorrente_inicio
+    const end = t.receita_recorrente_fim || hoje
+    const endCap = end < hoje ? end : hoje
+    if (endCap < start) return 0
+
+    const [sy, sm] = start.split('-').map((x) => Number(x))
+    const [ey, em] = endCap.split('-').map((x) => Number(x))
+    if (!sy || !sm || !ey || !em) return 0
+
+    const dia = Math.min(
+      Math.max(1, Math.floor(Number(t.receita_recorrente_dia_pagamento))),
+      31,
+    )
+
+    let count = 0
+    let y = sy
+    let m = sm // 1..12
+    while (y < ey || (y === ey && m <= em)) {
+      const lastDay = diasNoMes(y, m)
+      const d = Math.min(dia, lastDay)
+      const due = `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+      if (due >= start && due <= endCap) count += 1
+      m += 1
+      if (m === 13) {
+        m = 1
+        y += 1
+      }
+    }
+    return count
+  }
   const demandasAprovadasOuApos = tickets.filter(
     (t) =>
       t.tipo === 'externa' &&
@@ -519,9 +563,11 @@ function buildReports(tickets: Ticket[]): ReportsData {
       sum +
       (t.tipo_receita === 'contrapartida'
         ? 0
-        : t.pagamento_pago_em && t.pagamento_pago_em.slice(0, 10) <= hoje
-          ? valor(t)
-          : 0),
+        : t.receita_recorrente
+          ? valor(t) * countRecorrenciasAteHoje(t)
+          : t.pagamento_pago_em && t.pagamento_pago_em.slice(0, 10) <= hoje
+            ? valor(t)
+            : 0),
     0,
   )
   const receitaContrapartida = demandasAprovadasOuApos.reduce(

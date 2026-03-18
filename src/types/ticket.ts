@@ -77,6 +77,14 @@ export interface Ticket {
   pagamento_data?: string | null
   /** Data/hora em que o pagamento foi marcado como pago (null = a ser faturada) */
   pagamento_pago_em?: string | null
+  /** Receita recorrente mensal (contabiliza automaticamente mês a mês) */
+  receita_recorrente?: boolean
+  /** Dia do mês (1..31) em que a receita é contabilizada */
+  receita_recorrente_dia_pagamento?: number | null
+  /** Início da recorrência (YYYY-MM-DD) */
+  receita_recorrente_inicio?: string | null
+  /** Fim da recorrência (YYYY-MM-DD) - opcional */
+  receita_recorrente_fim?: string | null
   /** Receita monetária ou contrapartida (ex.: material) */
   tipo_receita?: 'monetaria' | 'contrapartida' | null
   /** Material da contrapartida quando tipo_receita = contrapartida */

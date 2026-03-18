@@ -10,6 +10,7 @@ import { InboxTriagemPage } from './screens/InboxTriagemPage'
 import { AtribuirResponsavelPage } from './screens/AtribuirResponsavelPage'
 import { ReadyGalleryPage } from './screens/ReadyGalleryPage'
 import { ReportsPage } from './screens/ReportsPage'
+import { FinancialReportsPage } from './screens/FinancialReportsPage'
 import { SolicitarPage } from './screens/SolicitarPage'
 import { WhatsAppDemandsPage } from './screens/WhatsAppDemandsPage'
 import { FeedPage } from './screens/FeedPage'
@@ -120,6 +121,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <ReportsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/relatorios/financeiro"
+            element={
+              <ProtectedRoute>
+                <FinancialReportsPage />
               </ProtectedRoute>
             }
           />

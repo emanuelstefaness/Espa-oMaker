@@ -91,6 +91,10 @@ export async function listTickets(
       pagamento_tipo,
       pagamento_data,
       pagamento_pago_em,
+      receita_recorrente,
+      receita_recorrente_dia_pagamento,
+      receita_recorrente_inicio,
+      receita_recorrente_fim,
       tipo_receita,
       contrapartida_material,
       contrapartida_quantidade,
@@ -261,6 +265,10 @@ export async function getTicket(id: string): Promise<Ticket | null> {
   pagamento_tipo,
   pagamento_data,
   pagamento_pago_em,
+  receita_recorrente,
+  receita_recorrente_dia_pagamento,
+  receita_recorrente_inicio,
+  receita_recorrente_fim,
   tipo_receita,
   contrapartida_material,
   contrapartida_quantidade,
@@ -312,6 +320,10 @@ export interface CreateTicketInput {
   valor_demanda?: number | null
   pagamento_tipo?: 'avista' | 'a_definir' | null
   pagamento_data?: string | null
+  receita_recorrente?: boolean
+  receita_recorrente_dia_pagamento?: number | null
+  receita_recorrente_inicio?: string | null
+  receita_recorrente_fim?: string | null
   tipo_receita?: 'monetaria' | 'contrapartida' | null
   contrapartida_material?: string | null
   contrapartida_quantidade?: number | null
@@ -345,6 +357,10 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
       valor_demanda: input.valor_demanda ?? null,
       pagamento_tipo: input.pagamento_tipo ?? 'avista',
       pagamento_data: input.pagamento_data ?? null,
+      receita_recorrente: input.receita_recorrente ?? false,
+      receita_recorrente_dia_pagamento: input.receita_recorrente_dia_pagamento ?? null,
+      receita_recorrente_inicio: input.receita_recorrente_inicio ?? null,
+      receita_recorrente_fim: input.receita_recorrente_fim ?? null,
       tipo_receita: input.tipo_receita ?? 'monetaria',
       contrapartida_material: input.contrapartida_material ?? null,
       contrapartida_quantidade: input.contrapartida_quantidade ?? null,
@@ -413,6 +429,10 @@ const TICKET_SELECT_WITH_RESPONSAVEL = `
   pagamento_tipo,
   pagamento_data,
   pagamento_pago_em,
+  receita_recorrente,
+  receita_recorrente_dia_pagamento,
+  receita_recorrente_inicio,
+  receita_recorrente_fim,
   nivel_dificuldade,
   excluida_em,
   responsavel:responsavel_id ( id, name, avatar_url )
@@ -482,6 +502,10 @@ export interface UpdateTicketDadosInput {
   pagamento_tipo?: 'avista' | 'a_definir' | null
   pagamento_data?: string | null
   pagamento_pago_em?: string | null
+  receita_recorrente?: boolean
+  receita_recorrente_dia_pagamento?: number | null
+  receita_recorrente_inicio?: string | null
+  receita_recorrente_fim?: string | null
   tipo_receita?: 'monetaria' | 'contrapartida' | null
   contrapartida_material?: string | null
   contrapartida_quantidade?: number | null
@@ -526,6 +550,14 @@ export async function updateTicketDados(
     updatePayload.pagamento_data = payload.pagamento_data
   if (payload.pagamento_pago_em !== undefined)
     updatePayload.pagamento_pago_em = payload.pagamento_pago_em
+  if (payload.receita_recorrente !== undefined)
+    updatePayload.receita_recorrente = payload.receita_recorrente
+  if (payload.receita_recorrente_dia_pagamento !== undefined)
+    updatePayload.receita_recorrente_dia_pagamento = payload.receita_recorrente_dia_pagamento
+  if (payload.receita_recorrente_inicio !== undefined)
+    updatePayload.receita_recorrente_inicio = payload.receita_recorrente_inicio
+  if (payload.receita_recorrente_fim !== undefined)
+    updatePayload.receita_recorrente_fim = payload.receita_recorrente_fim
   if (payload.tipo_receita !== undefined)
     updatePayload.tipo_receita = payload.tipo_receita
   if (payload.contrapartida_material !== undefined)
@@ -1207,6 +1239,13 @@ function mapRowToTicket(row: any): Ticket {
     pagamento_tipo: row.pagamento_tipo ?? null,
     pagamento_data: row.pagamento_data ?? null,
     pagamento_pago_em: row.pagamento_pago_em ?? null,
+    receita_recorrente: !!row.receita_recorrente,
+    receita_recorrente_dia_pagamento:
+      row.receita_recorrente_dia_pagamento != null
+        ? Number(row.receita_recorrente_dia_pagamento)
+        : null,
+    receita_recorrente_inicio: row.receita_recorrente_inicio ?? null,
+    receita_recorrente_fim: row.receita_recorrente_fim ?? null,
     tipo_receita: row.tipo_receita ?? null,
     contrapartida_material: row.contrapartida_material ?? null,
     contrapartida_quantidade:
