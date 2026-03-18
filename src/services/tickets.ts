@@ -331,6 +331,8 @@ export interface CreateTicketInput {
   observacoes_orcamento?: string
   status_orcamento?: 'aguardando_aprovacao' | 'aprovado' | 'reprovado'
   sem_cobranca?: boolean
+  /** Se definido (ex.: executor que cria a própria demanda), já entra com responsável. */
+  responsavel_id?: string | null
 }
 
 export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
@@ -377,6 +379,9 @@ export async function createTicket(input: CreateTicketInput): Promise<Ticket> {
       observacoes_orcamento: input.observacoes_orcamento ?? null,
       status_orcamento: input.status_orcamento ?? null,
       sem_cobranca: input.sem_cobranca ?? false,
+      ...(input.responsavel_id
+        ? { responsavel_id: input.responsavel_id }
+        : {}),
     }
 
   const insertTry = async (p: Record<string, unknown>) => {

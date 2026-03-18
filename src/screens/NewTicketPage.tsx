@@ -10,6 +10,7 @@ import type {
 import { createTicket, uploadTicketFile } from '../services/tickets'
 import { CategorySelect } from '../components/CategorySelect'
 import { MaterialSelect } from '../components/MaterialSelect'
+import { useAuth } from '../auth/AuthContext'
 
 type AnexoKind = 'foto' | 'arquivo'
 
@@ -88,6 +89,9 @@ export function NewTicketPage() {
         descricao,
         tipo,
         solicitante_nome: solicitanteNome,
+        ...(appUser?.role === 'executor' && appUser.id
+          ? { responsavel_id: appUser.id }
+          : {}),
         solicitante_telefone: solicitanteTelefone || undefined,
         categoria,
         prioridade,
@@ -156,7 +160,9 @@ export function NewTicketPage() {
             Nova demanda
           </h1>
           <p className="mt-1 text-sm text-slate-500">
-            Preencha os dados. A triagem e o responsável são definidos depois.
+            {appUser?.role === 'felipe'
+              ? 'Preencha os dados. A triagem e o responsável seguem o fluxo normal (caixa de entrada).'
+              : 'Preencha os dados. Esta demanda será atribuída a você como responsável.'}
           </p>
         </header>
 
