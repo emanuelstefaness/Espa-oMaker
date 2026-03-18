@@ -146,7 +146,9 @@ export function TicketListPage() {
     if (isMinhasDemandas) {
       load(0)
       if (appUser?.id) {
-        listTasksByResponsavel(appUser.id).then(setMyTasks).catch(() => setMyTasks([]))
+        listTasksByResponsavel(appUser.id)
+          .then((tasks) => setMyTasks(tasks.filter((t) => t.status !== 'concluido')))
+          .catch(() => setMyTasks([]))
       } else {
         setMyTasks([])
       }
