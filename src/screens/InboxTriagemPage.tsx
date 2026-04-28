@@ -19,6 +19,7 @@ export function InboxTriagemPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [selectedTicket, setSelectedTicket] = useState<Ticket | null>(null)
   /** Evita “piscar” do select enquanto o PATCH não termina */
   const [selectDraft, setSelectDraft] = useState<Record<string, Ticket['status']>>(
     {},
@@ -186,7 +187,13 @@ export function InboxTriagemPage() {
                   className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-slate-800">{ticket.titulo}</p>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTicket(ticket)}
+                      className="text-left font-medium text-slate-800 hover:text-blue-600 hover:underline"
+                    >
+                      {ticket.titulo}
+                    </button>
                     <p className="text-sm text-slate-500">
                       {ticket.solicitante_nome}
                     </p>
@@ -229,6 +236,51 @@ export function InboxTriagemPage() {
           )}
         </div>
       </section>
+      {selectedTicket && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="demanda-modal-title"
+          onClick={() => setSelectedTicket(null)}
+        >
+          <div
+            className="w-full max-w-2xl rounded-xl border border-slate-200 bg-white p-5 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h2
+                  id="demanda-modal-title"
+                  className="text-lg font-semibold text-slate-800"
+                >
+                  {selectedTicket.titulo}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Solicitante: {selectedTicket.solicitante_nome}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedTicket(null)}
+                className="rounded-md border border-slate-300 px-2.5 py-1 text-sm text-slate-600 hover:bg-slate-50"
+              >
+                Fechar
+              </button>
+            </div>
+            <div className="mt-4 rounded-lg border border-slate-100 bg-slate-50 p-3">
+              <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                Descrição da demanda
+              </p>
+              <p className="mt-2 whitespace-pre-line text-sm text-slate-700">
+                {selectedTicket.descricao?.trim()
+                  ? selectedTicket.descricao
+                  : 'Sem descrição informada.'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </LayoutShell>
   )
 }
