@@ -476,14 +476,14 @@ export function TicketDetailPage() {
     if (!id || !ticket) return
     setSavingDados(true)
     try {
-      const updated = await updateTicketDados(id, {
+      const normalizedDataEntrega = formDados.data_entrega || null
+      const payloadDados = {
         titulo: formDados.titulo,
         descricao: formDados.descricao || null,
         solicitante_nome: formDados.solicitante_nome,
         solicitante_telefone: formDados.solicitante_telefone || null,
         categoria: formDados.categoria,
         prioridade: formDados.prioridade,
-        data_entrega: formDados.data_entrega || null,
         material_impressao:
           formDados.categoria === 'servicos_3d' && formDados.material_impressao
             ? formDados.material_impressao
@@ -540,6 +540,13 @@ export function TicketDetailPage() {
             : null,
         custo:
           formDados.custo !== '' ? Number(formDados.custo) : null,
+      }
+
+      const updated = await updateTicketDados(id, {
+        ...payloadDados,
+        ...(normalizedDataEntrega !== (ticket.data_entrega ?? null)
+          ? { data_entrega: normalizedDataEntrega }
+          : {}),
       })
       setTicket(updated)
       setEditingDados(false)

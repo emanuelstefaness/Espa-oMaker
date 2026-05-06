@@ -490,12 +490,16 @@ export async function updateTicketStatus(
   id: string,
   payload: UpdateTicketStatusInput,
 ): Promise<Ticket> {
+  const updatePayload: Record<string, unknown> = {
+    status: payload.status,
+  }
+  if (payload.data_entrega !== undefined) {
+    updatePayload.data_entrega = payload.data_entrega
+  }
+
   const { data, error } = await supabase
     .from('tickets')
-    .update({
-      status: payload.status,
-      data_entrega: payload.data_entrega ?? null,
-    })
+    .update(updatePayload)
     .eq('id', id)
     .select(TICKET_SELECT_WITH_RESPONSAVEL)
     .single()
@@ -1210,6 +1214,13 @@ export async function deleteTicketFile(fileId: number): Promise<void> {
 }
 
 function mapRowToTicket(row: any): Ticket {
+  const normalizeDateOnly = (value: unknown): string | null => {
+    if (typeof value !== 'string' || !value.trim()) return null
+    const trimmed = value.trim()
+    const m = trimmed.match(/^(\d{4}-\d{2}-\d{2})/)
+    return m ? m[1] : trimmed
+  }
+
   const impressao3d =
     row.categoria === 'servicos_3d'
       ? {
@@ -1251,19 +1262,19 @@ function mapRowToTicket(row: any): Ticket {
     responsavel_avatar_url: row.responsavel?.avatar_url ?? null,
     colaborador_id: row.colaborador_id ?? null,
     data_criacao: row.data_criacao,
-    data_entrega: row.data_entrega ?? null,
+    data_entrega: normalizeDateOnly(row.data_entrega),
     valor_demanda: row.valor_demanda != null ? Number(row.valor_demanda) : null,
     orcamento_pago_em: row.orcamento_pago_em ?? null,
     pagamento_tipo: row.pagamento_tipo ?? null,
-    pagamento_data: row.pagamento_data ?? null,
+    pagamento_data: normalizeDateOnly(row.pagamento_data),
     pagamento_pago_em: row.pagamento_pago_em ?? null,
     receita_recorrente: !!row.receita_recorrente,
     receita_recorrente_dia_pagamento:
       row.receita_recorrente_dia_pagamento != null
         ? Number(row.receita_recorrente_dia_pagamento)
         : null,
-    receita_recorrente_inicio: row.receita_recorrente_inicio ?? null,
-    receita_recorrente_fim: row.receita_recorrente_fim ?? null,
+    receita_recorrente_inicio: normalizeDateOnly(row.receita_recorrente_inicio),
+    receita_recorrente_fim: normalizeDateOnly(row.receita_recorrente_fim),
     tipo_receita: row.tipo_receita ?? null,
     contrapartida_material: row.contrapartida_material ?? null,
     contrapartida_quantidade:
