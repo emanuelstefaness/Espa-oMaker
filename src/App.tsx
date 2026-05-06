@@ -136,7 +136,7 @@ function App() {
           <Route
             path="/feed"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute requireFeedAccess>
                 <FeedPage />
               </ProtectedRoute>
             }

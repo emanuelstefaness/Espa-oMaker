@@ -19,6 +19,7 @@ export interface AppUser {
   email: string
   role: AppUserRole
   avatar_url: string | null
+  can_access_feed: boolean
 }
 
 interface AuthContextValue {
@@ -48,6 +49,7 @@ async function resolveAppUser(user: User): Promise<AppUser> {
     email,
     role: mapRole(email),
     avatar_url: null,
+    can_access_feed: true,
   }
   try {
     const profile = await getAppUserProfile(user.id)
@@ -58,6 +60,7 @@ async function resolveAppUser(user: User): Promise<AppUser> {
         email,
         role: profile.role,
         avatar_url: profile.avatar_url,
+        can_access_feed: profile.can_access_feed,
       }
     }
   } catch {

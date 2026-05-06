@@ -166,19 +166,21 @@ export function LayoutShell({ children }: { children: React.ReactNode }) {
           >
             Agenda
           </NavLink>
-          <NavLink
-            to="/feed"
-            className={({ isActive }) =>
-              `flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-              }`
-            }
-          >
-            Feed
-            <NavBadge count={unread.feed} />
-          </NavLink>
+          {appUser?.can_access_feed !== false && (
+            <NavLink
+              to="/feed"
+              className={({ isActive }) =>
+                `flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                }`
+              }
+            >
+              Feed
+              <NavBadge count={unread.feed} />
+            </NavLink>
+          )}
           <div className="my-2 border-t border-slate-100 pt-2">
             <NavLink
               to="/relatorios"

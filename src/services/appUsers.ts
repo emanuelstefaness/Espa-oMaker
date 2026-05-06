@@ -12,6 +12,7 @@ export interface AppUserProfile {
   name: string
   role: AppUserRole
   avatar_url: string | null
+  can_access_feed: boolean
 }
 
 export async function listAppUsers(): Promise<AppUserOption[]> {
@@ -36,7 +37,7 @@ export async function getAppUserProfile(
 ): Promise<AppUserProfile | null> {
   const { data, error } = await supabase
     .from('app_users')
-    .select('id, name, role, avatar_url')
+    .select('id, name, role, avatar_url, can_access_feed')
     .eq('id', userId)
     .single()
 
@@ -50,6 +51,7 @@ export async function getAppUserProfile(
     name: data.name,
     role: data.role as AppUserRole,
     avatar_url: data.avatar_url ?? null,
+    can_access_feed: data.can_access_feed ?? true,
   }
 }
 
