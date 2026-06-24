@@ -188,17 +188,13 @@ export function ReportsPage() {
   return (
     <LayoutShell>
       <section className="space-y-6">
-        <header>
-          <h1 className="text-2xl font-semibold text-slate-800">
-            Indicadores do Espaço Maker
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Produtividade da equipe, prazos e receita das demandas externas.
-          </p>
+        <header className="page-header">
+          <h1>Indicadores do Espaço Maker</h1>
+          <p>Produtividade da equipe, prazos e receita das demandas externas.</p>
         </header>
 
         {loading && (
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
+          <div className="ctp-card px-4 py-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
             Calculando relatórios...
           </div>
         )}
@@ -211,7 +207,7 @@ export function ReportsPage() {
 
         {data && !loading && !error && (
           <>
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="ctp-card p-4">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Demandas por responsável (7 dias)
               </p>
@@ -235,7 +231,7 @@ export function ReportsPage() {
               </ul>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="ctp-card p-4">
               <h2 className="text-sm font-semibold text-slate-700">
                 Resumo financeiro
               </h2>
@@ -243,7 +239,7 @@ export function ReportsPage() {
                 Período filtrado · demandas externas com orçamento aprovado ou mais
               </p>
               <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50/80 p-4">
+                <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-4">
                   <p className="text-xs font-medium uppercase tracking-wider text-emerald-700">
                     Receita geral
                   </p>
@@ -254,7 +250,7 @@ export function ReportsPage() {
                     monetária + contrapartida
                   </p>
                 </div>
-                <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4">
+                <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-4">
                   <p className="text-xs font-medium uppercase tracking-wider text-emerald-700">
                     Receita monetária
                   </p>
@@ -262,7 +258,7 @@ export function ReportsPage() {
                     R$ {data.receitaMonetaria.toFixed(2)}
                   </p>
                 </div>
-                <div className="rounded-lg border border-violet-200 bg-violet-50/80 p-4">
+                <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-4">
                   <p className="text-xs font-medium uppercase tracking-wider text-violet-700">
                     Receita contrapartida
                   </p>
@@ -273,7 +269,7 @@ export function ReportsPage() {
                     material / equivalente
                   </p>
                 </div>
-                <div className="rounded-lg border border-amber-200 bg-amber-50/80 p-4">
+                <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-4">
                   <p className="text-xs font-medium uppercase tracking-wider text-amber-700">
                     Custo geral
                   </p>
@@ -281,21 +277,24 @@ export function ReportsPage() {
                     R$ {data.custoTotal.toFixed(2)}
                   </p>
                 </div>
-                <div className="rounded-lg border border-blue-200 bg-blue-50/80 p-4">
-                  <p className="text-xs font-medium uppercase tracking-wider text-blue-700">
+                <div className="rounded-lg border border-[#E2E8F0] bg-[#F8FAFC] p-4">
+                  <p className="text-xs font-medium uppercase tracking-wider text-[#063A70]">
                     Receita líquida
                   </p>
-                  <p className="mt-1 text-xl font-semibold text-blue-800">
+                  <p
+                    className="mt-1 text-xl font-bold"
+                    style={{ color: data.receitaLiquida < 0 ? '#DC2626' : '#15803D' }}
+                  >
                     R$ {data.receitaLiquida.toFixed(2)}
                   </p>
-                  <p className="mt-0.5 text-xs text-blue-600">
+                  <p className="mt-0.5 text-xs text-[#063A70]">
                     só monetária − custo
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="ctp-card p-4">
               <h2 className="text-sm font-semibold text-slate-700">
                 Tempo de trabalho por demanda (play/pause)
               </h2>
@@ -311,25 +310,25 @@ export function ReportsPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-slate-200 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                        <th className="py-2 pr-4">Demanda</th>
-                        <th className="py-2 pr-4">Quem trabalhou</th>
-                        <th className="py-2 pr-4 text-right">Dias</th>
-                        <th className="py-2 text-right">Horas</th>
+                        <th className="py-3 pr-4">Demanda</th>
+                        <th className="py-3 pr-4">Quem trabalhou</th>
+                        <th className="py-3 pr-4 text-right">Dias</th>
+                        <th className="py-3 text-right">Horas</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {workSessionsReport.map((row, idx) => (
                         <tr key={`${row.ticketId}-${row.userName}-${idx}`}>
-                          <td className="py-2 pr-4 text-slate-800">
+                          <td className="py-3 pr-4 text-slate-800">
                             {row.ticketTitulo}
                           </td>
-                          <td className="py-2 pr-4 text-slate-700">
+                          <td className="py-3 pr-4 text-slate-700">
                             {row.userName}
                           </td>
-                          <td className="py-2 pr-4 text-right text-slate-700">
+                          <td className="py-3 pr-4 text-right text-slate-700">
                             {row.diasTrabalhados}
                           </td>
-                          <td className="py-2 text-right font-medium text-slate-800">
+                          <td className="py-3 text-right font-semibold text-slate-800">
                             {formatHorasMinutos(row.horasTrabalhadas)}
                           </td>
                         </tr>
@@ -344,7 +343,7 @@ export function ReportsPage() {
 
         {/* Relatório de demandas (tabela + exportação) */}
         {!loading && !error && (
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="ctp-card p-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="text-lg font-semibold text-slate-800">
                 Relatório de demandas
@@ -353,21 +352,21 @@ export function ReportsPage() {
                 <button
                   type="button"
                   onClick={() => exportXLS(tickets, workSessionsReport)}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  className="btn btn-outline btn-sm"
                 >
                   Exportar XLS
                 </button>
                 <button
                   type="button"
                   onClick={handleExportPDF}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                  className="btn btn-outline btn-sm"
                 >
                   Exportar PDF
                 </button>
               </div>
             </div>
 
-            <div className="mt-4 flex flex-wrap items-end gap-3 rounded-lg border border-slate-100 bg-slate-50/50 p-3">
+            <div className="mt-4 flex flex-wrap items-end gap-3 rounded-lg p-3" style={{ background: 'var(--bg-muted)', border: '1px solid var(--border-default)' }}>
               <span className="text-sm font-medium text-slate-700">
                 Período (data de criação):
               </span>
@@ -377,7 +376,8 @@ export function ReportsPage() {
                   type="date"
                   value={dataInicio}
                   onChange={(e) => setDataInicio(e.target.value)}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800"
+                  className="ctp-input"
+                  style={{ width: 'auto' }}
                 />
               </label>
               <label className="flex flex-col gap-1">
@@ -386,20 +386,21 @@ export function ReportsPage() {
                   type="date"
                   value={dataFim}
                   onChange={(e) => setDataFim(e.target.value)}
-                  className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800"
+                  className="ctp-input"
+                  style={{ width: 'auto' }}
                 />
               </label>
               <button
                 type="button"
                 onClick={handleFiltrar}
-                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="btn btn-primary btn-sm"
               >
                 Filtrar
               </button>
               <button
                 type="button"
                 onClick={handleLimparFiltro}
-                className="text-sm text-slate-500 hover:text-slate-700"
+                className="btn btn-ghost btn-sm"
               >
                 Limpar período
               </button>

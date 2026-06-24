@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Inbox } from 'lucide-react'
 import { LayoutShell } from '../components/LayoutShell'
 import { TicketStatusPill } from '../components/TicketStatusPill'
 import type { Ticket } from '../types/ticket'
@@ -139,17 +140,14 @@ export function InboxTriagemPage() {
   }
 
   const isFelipe = appUser?.role === 'felipe'
-  const selectClass =
-    'min-w-[14rem] max-w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:cursor-not-allowed disabled:opacity-60'
+  const selectClass = 'ctp-input min-w-[14rem] max-w-full'
 
   return (
     <LayoutShell>
       <section className="space-y-6">
-        <header>
-          <h1 className="text-2xl font-semibold text-slate-800">
-            Caixa de entrada
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
+        <header className="page-header">
+          <h1>Caixa de entrada</h1>
+          <p>
             Workflow do orçamento. Escolha a fase de cada demanda. Ao aprovar o
             orçamento, você pode ir direto para definir o responsável.
           </p>
@@ -168,40 +166,49 @@ export function InboxTriagemPage() {
           </div>
         )}
 
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-100 px-4 py-3">
-            <span className="text-sm font-medium text-slate-600">
-              {tickets.length} demandas na caixa de entrada
+        <div className="ctp-card overflow-hidden">
+          <div className="flex items-center gap-2 px-7 py-3.5" style={{ borderBottom: '1px solid var(--border-default)' }}>
+            <span className="badge" style={{ background: 'rgba(6,58,112,0.08)', color: 'var(--ctp-navy)' }}>
+              {tickets.length}
+            </span>
+            <span className="text-[13px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
+              {tickets.length === 1 ? 'demanda na caixa de entrada' : 'demandas na caixa de entrada'}
             </span>
           </div>
           {loading ? (
-            <div className="px-4 py-8 text-center text-sm text-slate-500">
+            <div className="px-4 py-10 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
               Carregando...
             </div>
           ) : (
-            <ul className="divide-y divide-slate-100">
+            <ul>
               {tickets.map((ticket) => (
                 <li
                   key={ticket.id}
-                  className="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                  className="flex flex-col gap-3 px-7 py-4 transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+                  style={{ borderTop: '1px solid var(--border-default)' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(6,58,112,0.02)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
                 >
                   <div className="min-w-0 flex-1">
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/demandas/${ticket.id}`)}
-                      className="text-left font-medium text-slate-800 hover:text-blue-600 hover:underline"
-                    >
-                      {ticket.titulo}
-                    </button>
-                    <p className="text-sm text-slate-500">
-                      {ticket.solicitante_nome}
-                    </p>
-                    <div className="mt-2">
+                    <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                      <button
+                        type="button"
+                        onClick={() => navigate(`/demandas/${ticket.id}`)}
+                        className="text-left font-semibold transition-colors"
+                        style={{ color: 'var(--text-primary)' }}
+                        onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--ctp-navy)')}
+                        onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+                      >
+                        {ticket.titulo}
+                      </button>
                       <TicketStatusPill status={ticket.status} />
                     </div>
+                    <p className="mt-1 text-[13px]" style={{ color: 'var(--text-muted)' }}>
+                      {ticket.solicitante_nome}
+                    </p>
                   </div>
                   <div className="flex flex-col gap-1 sm:items-end">
-                    <label className="text-xs font-medium uppercase tracking-wide text-slate-500">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
                       Fase do orçamento
                     </label>
                     <select
@@ -221,7 +228,7 @@ export function InboxTriagemPage() {
                       ))}
                     </select>
                     {savingId === ticket.id && (
-                      <span className="text-xs text-slate-400">Salvando…</span>
+                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Salvando…</span>
                     )}
                   </div>
                 </li>
@@ -229,8 +236,10 @@ export function InboxTriagemPage() {
             </ul>
           )}
           {!loading && tickets.length === 0 && (
-            <div className="px-4 py-8 text-center text-sm text-slate-500">
-              Nenhuma demanda na caixa de entrada.
+            <div className="empty-state">
+              <Inbox size={32} />
+              <p>Nenhuma demanda na caixa de entrada.</p>
+              <p>Novas solicitações aparecerão aqui.</p>
             </div>
           )}
         </div>

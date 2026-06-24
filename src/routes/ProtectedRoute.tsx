@@ -7,16 +7,25 @@ interface ProtectedRouteProps {
   requireFeedAccess?: boolean
 }
 
+const DEV_BYPASS_AUTH = false
+
 export function ProtectedRoute({
   children,
   requireFeedAccess = false,
 }: ProtectedRouteProps) {
   const { supabaseUser, appUser, loading } = useAuth()
 
+  if (DEV_BYPASS_AUTH) {
+    return children
+  }
+
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-100">
-        <span className="animate-pulse text-sm text-slate-400">
+      <div
+        className="flex min-h-screen items-center justify-center"
+        style={{ background: 'var(--bg-app)' }}
+      >
+        <span className="animate-pulse text-sm" style={{ color: 'var(--text-muted)' }}>
           Carregando...
         </span>
       </div>

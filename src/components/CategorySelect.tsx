@@ -38,19 +38,12 @@ export function CategorySelect({
         type="button"
         id={id}
         onClick={() => setOpen((o) => !o)}
-        className={`flex w-full items-center justify-between rounded-lg border border-slate-300 bg-white px-3 py-2 text-left text-sm text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400 ${className}`}
+        className={`ctp-input flex w-full items-center justify-between text-left ${className}`}
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-labelledby={id ? `${id}-label` : undefined}
       >
-        <span>
-          {selected?.label ?? value}
-          {selected?.descricao && (
-            <span className="ml-2 text-xs font-normal text-slate-500">
-              {selected.descricao}
-            </span>
-          )}
-        </span>
+        <span className="truncate">{selected?.label ?? value}</span>
         <svg
           className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}
           fill="none"
@@ -78,7 +71,7 @@ export function CategorySelect({
               }}
               className={`flex cursor-pointer items-baseline gap-2 px-3 py-2 text-sm transition-colors ${
                 c.value === value
-                  ? 'bg-blue-50 text-blue-800'
+                  ? 'bg-[rgba(6,58,112,0.08)] font-semibold text-[#063A70]'
                   : 'text-slate-800 hover:bg-slate-50'
               }`}
             >

@@ -5,7 +5,7 @@ import { TicketStatusPill } from '../components/TicketStatusPill'
 import { UserAvatar } from '../components/UserAvatar'
 import type { Ticket } from '../types/ticket'
 import { listTickets } from '../services/tickets'
-import { getTicketCardClasses } from '../constants/ticketOptions'
+import { CATEGORIA_COR } from '../constants/ticketOptions'
 
 const WEEKDAY_LABELS = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom']
 const MONTH_NAMES = [
@@ -134,41 +134,25 @@ export function AgendaPage() {
   return (
     <LayoutShell>
       <div className="space-y-4">
-        <header className="flex flex-wrap items-center justify-between gap-3">
+        <header className="page-header flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-800">Agenda</h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Calendário mensal com prazos de entrega das demandas.
-            </p>
+            <h1>Agenda</h1>
+            <p>Calendário mensal com prazos de entrega das demandas.</p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={goPrevMonth}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              aria-label="Mês anterior"
-            >
+            <button type="button" onClick={goPrevMonth} className="btn btn-outline btn-sm" aria-label="Mês anterior">
               ←
             </button>
-            <button
-              type="button"
-              onClick={goToday}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
+            <button type="button" onClick={goToday} className="btn btn-outline btn-sm">
               Hoje
             </button>
-            <button
-              type="button"
-              onClick={goNextMonth}
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              aria-label="Próximo mês"
-            >
+            <button type="button" onClick={goNextMonth} className="btn btn-outline btn-sm" aria-label="Próximo mês">
               →
             </button>
           </div>
         </header>
 
-        <p className="text-sm font-semibold text-slate-700">{monthLabel}</p>
+        <p className="text-sm font-semibold" style={{ color: 'var(--ctp-navy)' }}>{monthLabel}</p>
 
         {error && (
           <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
@@ -176,12 +160,13 @@ export function AgendaPage() {
           </div>
         )}
 
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="grid grid-cols-7 border-b border-slate-200 bg-slate-50">
+        <div className="ctp-card overflow-hidden">
+          <div className="grid grid-cols-7" style={{ borderBottom: '1px solid var(--border-default)', background: 'var(--bg-muted)' }}>
             {WEEKDAY_LABELS.map((label) => (
               <div
                 key={label}
-                className="px-2 py-2.5 text-center text-xs font-semibold uppercase tracking-wide text-slate-500"
+                className="px-2 py-2.5 text-center text-xs font-semibold uppercase tracking-wide"
+                style={{ color: 'var(--text-muted)' }}
               >
                 {label}
               </div>
@@ -223,11 +208,12 @@ export function AgendaPage() {
                       <span
                         className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${
                           isToday
-                            ? 'bg-blue-600 text-white'
+                            ? 'text-white'
                             : cell.inMonth
                               ? 'text-slate-700'
                               : 'text-slate-400'
                         }`}
+                        style={isToday ? { background: 'var(--ctp-navy)' } : undefined}
                       >
                         {cell.day}
                       </span>
@@ -244,7 +230,12 @@ export function AgendaPage() {
                           key={ticket.id}
                           to={`/demandas/${ticket.id}`}
                           onClick={(e) => e.stopPropagation()}
-                          className={`block truncate rounded border px-1 py-0.5 text-[10px] font-medium leading-tight text-slate-800 sm:text-xs ${getTicketCardClasses(ticket.categoria, ticket.prioridade)}`}
+                          className="block truncate rounded px-1 py-0.5 text-[10px] font-semibold leading-tight sm:text-xs"
+                          style={
+                            ticket.prioridade === 'urgente'
+                              ? { background: '#FEE2E2', color: '#991B1B', borderLeft: '3px solid #EF4444' }
+                              : { background: 'rgba(6,58,112,0.08)', color: 'var(--ctp-navy)', borderLeft: `3px solid ${CATEGORIA_COR[ticket.categoria] ?? '#94A3B8'}` }
+                          }
                           title={ticket.titulo}
                         >
                           {ticket.codigo ? `${ticket.codigo} ` : ''}
@@ -265,8 +256,8 @@ export function AgendaPage() {
         </div>
 
         {selectedYmd && !loading && (
-          <section className="rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 bg-slate-50/80 px-4 py-3">
+          <section className="ctp-card">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3" style={{ borderBottom: '1px solid var(--border-default)', background: 'var(--bg-muted)' }}>
               <h2 className="text-sm font-semibold text-slate-800">
                 {formatDayLabel(selectedYmd)}
                 {selectedYmd === hoje && (
@@ -318,8 +309,8 @@ export function AgendaPage() {
         )}
 
         {semPrazo.length > 0 && !loading && (
-          <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-100 bg-slate-50 px-4 py-2.5 text-sm font-medium text-slate-600">
+          <section className="ctp-card overflow-hidden">
+            <div className="px-4 py-2.5 text-sm font-medium" style={{ borderBottom: '1px solid var(--border-default)', background: 'var(--bg-muted)', color: 'var(--text-secondary)' }}>
               Sem data de entrega definida ({semPrazo.length})
             </div>
             <ul className="divide-y divide-slate-100">
