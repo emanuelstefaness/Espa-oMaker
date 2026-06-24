@@ -15,6 +15,10 @@ import { SolicitarPage } from './screens/SolicitarPage'
 import { WhatsAppDemandsPage } from './screens/WhatsAppDemandsPage'
 import { FeedPage } from './screens/FeedPage'
 import { AgendaPage } from './screens/AgendaPage'
+import { EstoquePage } from './screens/EstoquePage'
+import { PrefeituraPage } from './screens/PrefeituraPage'
+import { CalculadoraConfigPage } from './screens/CalculadoraConfigPage'
+import { OrcamentoCalculadoraPage } from './screens/OrcamentoCalculadoraPage'
 import { isSupabaseConfigured } from './lib/supabaseClient'
 
 function App() {
@@ -147,6 +151,39 @@ function App() {
             element={
               <ProtectedRoute>
                 <AgendaPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/estoque"
+            element={
+              <ProtectedRoute>
+                <EstoquePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/prefeitura"
+            element={
+              <ProtectedRoute>
+                <PrefeituraPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/orcamento"
+            element={
+              <ProtectedRoute>
+                <OrcamentoCalculadoraPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configuracoes-calculadora"
+            element={
+              <ProtectedRoute>
+                <CalculadoraConfigPage />
               </ProtectedRoute>
             }
           />

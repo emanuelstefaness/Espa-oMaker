@@ -562,7 +562,7 @@ export function TicketDetailPage() {
   if (loading) {
     return (
       <LayoutShell>
-        <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
+        <div className="ctp-card px-4 py-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
           Carregando demanda...
         </div>
       </LayoutShell>
@@ -652,7 +652,7 @@ export function TicketDetailPage() {
 
         <div className="grid gap-6 lg:grid-cols-[2fr_1.4fr]">
           <div className="space-y-4">
-            <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="ctp-card p-4">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Informações principais
@@ -661,7 +661,7 @@ export function TicketDetailPage() {
                   <button
                     type="button"
                     onClick={openEditDados}
-                    className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                    className="btn btn-outline btn-sm"
                   >
                     {ticket.origem === 'formulario'
                       ? 'Completar dados'
@@ -677,7 +677,7 @@ export function TicketDetailPage() {
                 >
                   <div className="grid gap-3 md:grid-cols-2">
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-600">
+                      <label className="ctp-label">
                         Título
                       </label>
                       <input
@@ -686,11 +686,11 @@ export function TicketDetailPage() {
                         onChange={(e) =>
                           setFormDados((p) => ({ ...p, titulo: e.target.value }))
                         }
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        className="ctp-input"
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-600">
+                      <label className="ctp-label">
                         Solicitante
                       </label>
                       <input
@@ -702,13 +702,13 @@ export function TicketDetailPage() {
                             solicitante_nome: e.target.value,
                           }))
                         }
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        className="ctp-input"
                       />
                     </div>
                   </div>
                   <div className="grid gap-3 md:grid-cols-2">
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-600">
+                      <label className="ctp-label">
                         Telefone
                       </label>
                       <input
@@ -719,11 +719,11 @@ export function TicketDetailPage() {
                             solicitante_telefone: e.target.value,
                           }))
                         }
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        className="ctp-input"
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-600">
+                      <label className="ctp-label">
                         Prioridade
                       </label>
                       <select
@@ -734,7 +734,7 @@ export function TicketDetailPage() {
                             prioridade: e.target.value as TicketPrioridade,
                           }))
                         }
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        className="ctp-input"
                       >
                         <option value="baixa">Baixa</option>
                         <option value="media">Média</option>
@@ -745,7 +745,7 @@ export function TicketDetailPage() {
                   </div>
                   <div className="grid gap-3 md:grid-cols-2">
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-600">
+                      <label className="ctp-label">
                         Categoria
                       </label>
                       <CategorySelect
@@ -757,7 +757,7 @@ export function TicketDetailPage() {
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-600">
+                      <label className="ctp-label">
                         Prazo de entrega
                       </label>
                       <input
@@ -769,12 +769,12 @@ export function TicketDetailPage() {
                             data_entrega: e.target.value,
                           }))
                         }
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        className="ctp-input"
                       />
                     </div>
                   </div>
                   <div className="md:col-span-2">
-                    <label className="mb-1 block text-xs font-medium text-slate-600">
+                    <label className="ctp-label">
                       Tipo de receita
                     </label>
                     <div className="flex gap-4">
@@ -805,7 +805,7 @@ export function TicketDetailPage() {
                     </div>
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-600">
+                    <label className="ctp-label">
                       {formDados.tipo_receita === 'contrapartida'
                         ? 'Valor equivalente (R$)'
                         : 'Valor da demanda (R$)'}
@@ -824,13 +824,13 @@ export function TicketDetailPage() {
                               : Number(e.target.value),
                         }))
                       }
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      className="ctp-input"
                       placeholder="0,00"
                     />
                   </div>
                   {formDados.tipo_receita === 'monetaria' && (
                     <div className="md:col-span-2">
-                      <label className="mb-1 block text-xs font-medium text-slate-600">
+                      <label className="ctp-label">
                         Pagamento
                       </label>
                       <div className="grid gap-3 md:grid-cols-3">
@@ -877,7 +877,7 @@ export function TicketDetailPage() {
                               }))
                             }
                             disabled={formDados.pagamento_tipo !== 'a_definir'}
-                            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm disabled:opacity-60"
+                            className="ctp-input disabled:opacity-60"
                           />
                         </div>
                       </div>
@@ -891,7 +891,7 @@ export function TicketDetailPage() {
                   )}
                   {formDados.tipo_receita === 'monetaria' && (
                     <div className="md:col-span-2">
-                      <label className="mb-1 block text-xs font-medium text-slate-600">
+                      <label className="ctp-label">
                         Lançamento recorrente
                       </label>
                       <label className="flex items-center gap-2 text-sm text-slate-700">
@@ -923,7 +923,7 @@ export function TicketDetailPage() {
                       {formDados.receita_recorrente && (
                         <div className="mt-3 grid gap-3 md:grid-cols-3">
                           <div>
-                            <label className="mb-1 block text-xs font-medium text-slate-600">
+                            <label className="ctp-label">
                               Dia do mês
                             </label>
                             <input
@@ -944,12 +944,12 @@ export function TicketDetailPage() {
                                       : Number(e.target.value),
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                              className="ctp-input"
                               placeholder="Ex: 10"
                             />
                           </div>
                           <div>
-                            <label className="mb-1 block text-xs font-medium text-slate-600">
+                            <label className="ctp-label">
                               Início
                             </label>
                             <input
@@ -961,11 +961,11 @@ export function TicketDetailPage() {
                                   receita_recorrente_inicio: e.target.value,
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                              className="ctp-input"
                             />
                           </div>
                           <div>
-                            <label className="mb-1 block text-xs font-medium text-slate-600">
+                            <label className="ctp-label">
                               Fim (opcional)
                             </label>
                             <input
@@ -977,7 +977,7 @@ export function TicketDetailPage() {
                                   receita_recorrente_fim: e.target.value,
                                 }))
                               }
-                              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                              className="ctp-input"
                             />
                           </div>
                         </div>
@@ -987,7 +987,7 @@ export function TicketDetailPage() {
                   {formDados.tipo_receita === 'contrapartida' && (
                     <>
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-slate-600">
+                        <label className="ctp-label">
                           Material (contrapartida)
                         </label>
                         <input
@@ -999,12 +999,12 @@ export function TicketDetailPage() {
                               contrapartida_material: e.target.value,
                             }))
                           }
-                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                          className="ctp-input"
                           placeholder="Ex: PLA, resina"
                         />
                       </div>
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-slate-600">
+                        <label className="ctp-label">
                           Quantidade (contrapartida)
                         </label>
                         <input
@@ -1025,14 +1025,14 @@ export function TicketDetailPage() {
                                   : Number(e.target.value),
                             }))
                           }
-                          className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                          className="ctp-input"
                           placeholder="0"
                         />
                       </div>
                     </>
                   )}
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-600">
+                    <label className="ctp-label">
                       Custo (R$)
                     </label>
                     <input
@@ -1049,12 +1049,12 @@ export function TicketDetailPage() {
                               : Number(e.target.value),
                         }))
                       }
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      className="ctp-input"
                       placeholder="0,00"
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-slate-600">
+                    <label className="ctp-label">
                       Descrição
                     </label>
                     <textarea
@@ -1063,13 +1063,13 @@ export function TicketDetailPage() {
                         setFormDados((p) => ({ ...p, descricao: e.target.value }))
                       }
                       rows={3}
-                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      className="ctp-input"
                     />
                   </div>
                   {formDados.categoria === 'servicos_3d' && (
                     <div className="grid gap-3 rounded-lg border border-slate-100 bg-slate-50/50 p-3 md:grid-cols-2">
                       <div>
-                        <label className="mb-1 block text-xs font-medium text-slate-600">
+                        <label className="ctp-label">
                           Material
                         </label>
                         <MaterialSelect
@@ -1083,7 +1083,7 @@ export function TicketDetailPage() {
                         />
                       </div>
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-600">
+                      <label className="ctp-label">
                         Cor
                       </label>
                       <input
@@ -1091,12 +1091,12 @@ export function TicketDetailPage() {
                         onChange={(e) =>
                           setFormDados((p) => ({ ...p, cor: e.target.value }))
                         }
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        className="ctp-input"
                         placeholder="Ex: preto"
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-600">
+                      <label className="ctp-label">
                         Quantidade de peças
                       </label>
                       <input
@@ -1112,11 +1112,11 @@ export function TicketDetailPage() {
                                 : parseInt(e.target.value, 10),
                           }))
                         }
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        className="ctp-input"
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block text-xs font-medium text-slate-600">
+                      <label className="ctp-label">
                         Tamanho / escala
                       </label>
                       <input
@@ -1127,12 +1127,12 @@ export function TicketDetailPage() {
                             tamanho_escala: e.target.value,
                           }))
                         }
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        className="ctp-input"
                         placeholder="Ex: 1:1, 200%"
                       />
                     </div>
                     <div className="md:col-span-2">
-                      <label className="mb-1 block text-xs font-medium text-slate-600">
+                      <label className="ctp-label">
                         Observações técnicas
                       </label>
                       <textarea
@@ -1144,7 +1144,7 @@ export function TicketDetailPage() {
                           }))
                         }
                         rows={2}
-                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                        className="ctp-input"
                       />
                     </div>
                   </div>
@@ -1153,14 +1153,14 @@ export function TicketDetailPage() {
                     <button
                       type="submit"
                       disabled={savingDados}
-                      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+                      className="btn btn-primary"
                     >
                       {savingDados ? 'Salvando…' : 'Salvar'}
                     </button>
                     <button
                       type="button"
                       onClick={() => setEditingDados(false)}
-                      className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+                      className="btn btn-outline"
                     >
                       Cancelar
                     </button>
@@ -1257,7 +1257,7 @@ export function TicketDetailPage() {
                                   if (!window.confirm('Marcar como pago?')) return
                                   handleTogglePagamentoPago(true)
                                 }}
-                                className="rounded-md bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                                className="btn btn-primary btn-sm"
                               >
                                 Marcar como pago
                               </button>
@@ -1290,7 +1290,7 @@ export function TicketDetailPage() {
             </div>
 
             {ticket.categoria === 'servicos_3d' && ticket.impressao3d && (
-              <div className="space-y-2 rounded-xl border border-slate-200 bg-blue-50/50 p-4">
+              <div className="ctp-card space-y-2 p-4" style={{ borderLeft: '3px solid var(--ctp-navy)' }}>
                 <p className="text-xs font-semibold uppercase tracking-wider text-blue-800">
                   Serviços 3D
                 </p>
@@ -1312,7 +1312,7 @@ export function TicketDetailPage() {
               </div>
             )}
 
-            <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="space-y-2 ctp-card p-4">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Comentários
               </p>
@@ -1338,18 +1338,18 @@ export function TicketDetailPage() {
                   value={commentText}
                   onChange={(e) => setCommentText(e.target.value)}
                   placeholder="Adicionar comentário..."
-                  className="flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  className="ctp-input flex-1"
                 />
                 <button
                   type="submit"
-                  className="rounded-lg bg-blue-500 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-600"
+                  className="btn btn-primary"
                 >
                   Enviar
                 </button>
               </form>
             </div>
 
-            <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="space-y-2 ctp-card p-4">
               <div className="flex items-center justify-between gap-2">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Tasks da Demanda
@@ -1361,7 +1361,7 @@ export function TicketDetailPage() {
                       setShowNewTaskForm((v) => !v)
                       if (!showNewTaskForm) setTaskResponsavelId(appUser.id)
                     }}
-                    className="rounded-lg bg-emerald-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-600"
+                    className="btn btn-lime btn-sm"
                   >
                     + Nova Task
                   </button>
@@ -1377,22 +1377,22 @@ export function TicketDetailPage() {
                     onChange={(e) => setTaskTitulo(e.target.value)}
                     placeholder="Título da task"
                     required
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    className="ctp-input"
                   />
                   <textarea
                     value={taskDescricao}
                     onChange={(e) => setTaskDescricao(e.target.value)}
                     placeholder="Descrição (opcional)"
                     rows={2}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    className="ctp-input"
                   />
-                  <label className="block text-xs font-medium text-slate-600">
+                  <label className="ctp-label">
                     Responsável
                   </label>
                   <select
                     value={taskResponsavelId}
                     onChange={(e) => setTaskResponsavelId(e.target.value)}
-                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    className="ctp-input"
                   >
                     {appUsers.map((u) => (
                       <option key={u.id} value={u.id}>
@@ -1404,7 +1404,7 @@ export function TicketDetailPage() {
                     <button
                       type="submit"
                       disabled={savingTask}
-                      className="rounded-lg bg-emerald-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-emerald-600 disabled:opacity-50"
+                      className="btn btn-lime btn-sm"
                     >
                       {savingTask ? 'Salvando…' : 'Criar task'}
                     </button>
@@ -1416,7 +1416,7 @@ export function TicketDetailPage() {
                         setTaskDescricao('')
                         setTaskResponsavelId(appUser?.id ?? '')
                       }}
-                      className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                      className="btn btn-outline btn-sm"
                     >
                       Cancelar
                     </button>
@@ -1436,26 +1436,26 @@ export function TicketDetailPage() {
                           onChange={(e) => setEditTaskTitulo(e.target.value)}
                           placeholder="Título"
                           required
-                          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                          className="ctp-input"
                         />
                         <textarea
                           value={editTaskDescricao}
                           onChange={(e) => setEditTaskDescricao(e.target.value)}
                           placeholder="Descrição (opcional)"
                           rows={2}
-                          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                          className="ctp-input"
                         />
                         <div className="flex gap-2">
                           <button
                             type="submit"
-                            className="rounded-lg bg-blue-500 px-3 py-1.5 text-sm font-medium text-white hover:bg-blue-600"
+                            className="btn btn-primary btn-sm"
                           >
                             Salvar
                           </button>
                           <button
                             type="button"
                             onClick={handleEditTaskCancel}
-                            className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                            className="btn btn-outline btn-sm"
                           >
                             Cancelar
                           </button>
@@ -1565,7 +1565,7 @@ export function TicketDetailPage() {
 
           <div className="space-y-4">
             {isFelipe && (
-              <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="space-y-2 ctp-card p-4">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                   Definir responsável (triagem)
                 </p>
@@ -1578,7 +1578,7 @@ export function TicketDetailPage() {
                     <select
                       value={responsavelTriagemId}
                       onChange={(e) => setResponsavelTriagemId(e.target.value)}
-                      className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700"
+                      className="ctp-input"
                     >
                       <option value="">— Nenhum —</option>
                       {appUsers.map((u) => (
@@ -1592,14 +1592,14 @@ export function TicketDetailPage() {
                     type="button"
                     onClick={handleDefinirResponsavel}
                     disabled={savingResponsavel}
-                    className="rounded-lg border border-slate-300 bg-slate-100 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-200 disabled:opacity-50"
+                    className="btn btn-outline"
                   >
                     {savingResponsavel ? 'Salvando…' : 'Atribuir'}
                   </button>
                 </div>
               </div>
             )}
-            <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="space-y-2 ctp-card p-4">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Workflow
               </p>
@@ -1609,7 +1609,7 @@ export function TicketDetailPage() {
                 <>
                   {podeAlterarStatus && (
                     <div className="space-y-2">
-                      <label className="block text-xs font-medium text-slate-600">
+                      <label className="ctp-label">
                         Alterar status
                       </label>
                       <select
@@ -1626,7 +1626,7 @@ export function TicketDetailPage() {
                             handleStatusChange(next)
                           }
                         }}
-                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                        className="ctp-input"
                       >
                         <option value="recebida">Recebida</option>
                         <option value="em_analise">Em análise</option>
@@ -1655,7 +1655,7 @@ export function TicketDetailPage() {
             </div>
 
             {!ticket.excluida_em && podeAlterarStatus && (
-              <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="ctp-card p-4">
                 <button
                   type="button"
                   onClick={async () => {
@@ -1675,13 +1675,13 @@ export function TicketDetailPage() {
               </div>
             )}
 
-            <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="space-y-2 ctp-card p-4">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
                 Anexos
               </p>
               {!ticket.excluida_em && (
                 <div className="flex flex-wrap gap-2">
-                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                  <label className="btn btn-outline cursor-pointer">
                     + Foto
                     <input
                       type="file"
@@ -1690,7 +1690,7 @@ export function TicketDetailPage() {
                       onChange={(e) => handleUploadChange(e, 'foto')}
                     />
                   </label>
-                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50">
+                  <label className="btn btn-outline cursor-pointer">
                     + Arquivo
                     <input
                       type="file"
@@ -1716,7 +1716,7 @@ export function TicketDetailPage() {
                         href={f.public_url}
                         target="_blank"
                         rel="noreferrer"
-                        className="font-medium text-blue-600 hover:text-blue-700"
+                        className="font-medium text-[#063A70] hover:text-[#042c56]"
                       >
                         Abrir
                       </a>

@@ -149,28 +149,22 @@ export function NewTicketPage() {
     }
   }
 
-  const inputClass =
-    'w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400'
-  const labelClass = 'mb-1 block text-sm font-medium text-slate-700'
+  const inputClass = 'ctp-input'
+  const labelClass = 'ctp-label'
 
   return (
     <LayoutShell>
-      <section className="space-y-6">
-        <header>
-          <h1 className="text-2xl font-semibold text-slate-800">
-            Nova demanda
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
+      <section className="mx-auto max-w-[880px] space-y-6">
+        <header className="page-header">
+          <h1>Nova demanda</h1>
+          <p>
             {appUser?.role === 'felipe'
               ? 'Preencha os dados. A triagem e o responsável seguem o fluxo normal (caixa de entrada).'
               : 'Preencha os dados. Esta demanda será atribuída a você como responsável.'}
           </p>
         </header>
 
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
-        >
+        <form onSubmit={handleSubmit} className="ctp-card space-y-6 p-6">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className={labelClass}>Título</label>
@@ -473,7 +467,7 @@ export function NewTicketPage() {
           </div>
 
           {categoria === 'servicos_3d' && (
-            <div className="space-y-4 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+            <div className="space-y-4 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4">
               <h3 className="text-sm font-semibold text-slate-700">
                 Serviços 3D
               </h3>
@@ -533,7 +527,7 @@ export function NewTicketPage() {
             </div>
           )}
 
-          <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+          <div className="space-y-3 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] p-4">
             <h3 className="text-sm font-semibold text-slate-700">
               Fotos e arquivos
             </h3>
@@ -566,14 +560,14 @@ export function NewTicketPage() {
               <button
                 type="button"
                 onClick={() => fotoInputRef.current?.click()}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="btn btn-outline"
               >
                 + Foto
               </button>
               <button
                 type="button"
                 onClick={() => arquivoInputRef.current?.click()}
-                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="btn btn-outline"
               >
                 + Arquivo (STL, PDF…)
               </button>
@@ -615,14 +609,14 @@ export function NewTicketPage() {
               type="button"
               disabled={loading}
               onClick={() => navigate(-1)}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              className="btn btn-outline"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="rounded-lg bg-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600 disabled:opacity-50"
+              className="btn btn-lime"
             >
               {loading ? 'Salvando...' : 'Salvar demanda'}
             </button>

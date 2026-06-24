@@ -1,14 +1,28 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import {
+  Inbox, Clock, Factory, AlertTriangle, CheckCircle2, Truck, XCircle,
+  Play, ChevronLeft, ChevronRight, Plus,
+} from 'lucide-react'
 import { LayoutShell } from '../components/LayoutShell'
 import { TicketStatusPill } from '../components/TicketStatusPill'
+import { PageHeader } from '../components/PageHeader'
 import { UserAvatar } from '../components/UserAvatar'
 import type { Ticket } from '../types/ticket'
 import { listTickets } from '../services/tickets'
 import { getActiveSessionsAll } from '../services/workSessions'
-import { getTicketCardClasses } from '../constants/ticketOptions'
+import { getTicketCardClasses, CATEGORIA_COR } from '../constants/ticketOptions'
 
 const POLL_INTERVAL_MS = 15 * 60 * 1000 // 15 minutos
+
+interface SummaryDef {
+  to: string
+  label: string
+  value: number
+  icon: typeof Inbox
+  iconBg: string
+  iconColor: string
+}
 
 export function DashboardPage() {
   const [tickets, setTickets] = useState<Ticket[]>([])
@@ -116,245 +130,154 @@ export function DashboardPage() {
     return () => clearInterval(interval)
   }, [temMultiplasPaginas, totalPages])
 
+  const summary: SummaryDef[] = [
+    { to: '/demandas?status=recebida,em_analise,orcamento_em_criacao', label: 'Recebidas', value: recebidas, icon: Inbox, iconBg: '#EFF6FF', iconColor: '#3B82F6' },
+    { to: '/demandas?status=aguardando_aprovacao', label: 'Aguardando', value: aguardando, icon: Clock, iconBg: '#FFFBEB', iconColor: '#F59E0B' },
+    { to: '/demandas?status=em_producao,pos_processo', label: 'Em produção', value: emProducao, icon: Factory, iconBg: '#F5F3FF', iconColor: '#8B5CF6' },
+    { to: '/demandas?status=atrasadas', label: 'Atrasadas', value: atrasadas, icon: AlertTriangle, iconBg: '#FEF2F2', iconColor: '#EF4444' },
+    { to: '/demandas?status=pronta', label: 'Prontas', value: prontas, icon: CheckCircle2, iconBg: '#F7FEE7', iconColor: '#84CC16' },
+    { to: '/demandas?status=entregue', label: 'Entregues', value: entregues, icon: Truck, iconBg: '#F0FDFA', iconColor: '#14B8A6' },
+    { to: '/demandas?status=cancelada', label: 'Canceladas', value: canceladas, icon: XCircle, iconBg: '#F1F5F9', iconColor: '#94A3B8' },
+  ]
+
   return (
     <LayoutShell>
       <section className="space-y-6">
-        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-800 md:text-3xl">
-              Demandas do Espaço Maker
-            </h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Acompanhe recebimento, orçamento, produção e entrega.
-            </p>
-          </div>
-          <Link
-            to="/demandas/nova"
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600"
-          >
-            + Nova demanda
-          </Link>
-        </header>
+        <PageHeader
+          titulo="Demandas do Espaço Maker"
+          subtitulo="Acompanhe recebimento, orçamento, produção e entrega."
+          acoes={
+            <Link to="/demandas/nova" className="btn btn-lime">
+              <Plus size={16} strokeWidth={2.5} /> Nova demanda
+            </Link>
+          }
+        />
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-7">
-          <SummaryCard
-            to="/demandas?status=recebida,em_analise,orcamento_em_criacao"
-            label="Recebidas"
-            value={recebidas}
-            className="border-slate-200 bg-white text-slate-700"
-          />
-          <SummaryCard
-            to="/demandas?status=aguardando_aprovacao"
-            label="Aguardando aprovação"
-            value={aguardando}
-            className="border-amber-200 bg-amber-50 text-amber-800"
-          />
-          <SummaryCard
-            to="/demandas?status=em_producao,pos_processo"
-            label="Em produção"
-            value={emProducao}
-            className="border-violet-200 bg-violet-50 text-violet-800"
-          />
-          <SummaryCard
-            to="/demandas?status=atrasadas"
-            label="Atrasadas"
-            value={atrasadas}
-            className="border-rose-200 bg-rose-50 text-rose-800"
-          />
-          <SummaryCard
-            to="/demandas?status=pronta"
-            label="Prontas"
-            value={prontas}
-            className="border-lime-200 bg-lime-50 text-lime-800"
-          />
-          <SummaryCard
-            to="/demandas?status=entregue"
-            label="Entregues"
-            value={entregues}
-            className="border-slate-200 bg-slate-100 text-slate-700"
-          />
-          <SummaryCard
-            to="/demandas?status=cancelada"
-            label="Canceladas"
-            value={canceladas}
-            className="border-slate-300 bg-slate-100 text-slate-600"
-          />
+          {summary.map((s) => (
+            <Link key={s.label} to={s.to} className="block">
+              <div className="stat-card" style={{ padding: '1rem' }}>
+                <div className="stat-icon" style={{ background: s.iconBg, width: 40, height: 40 }}>
+                  <s.icon size={18} color={s.iconColor} strokeWidth={2} />
+                </div>
+                <div>
+                  <p className="stat-value" style={{ fontSize: '1.5rem' }}>{s.value}</p>
+                  <p className="stat-label" style={{ textTransform: 'none', letterSpacing: 0 }}>{s.label}</p>
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="space-y-3 lg:col-span-2">
             <div className="flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-slate-700">
-                Fila ativa
-              </h2>
-              <Link
-                to="/demandas"
-                className="text-sm font-medium text-blue-600 hover:text-blue-700"
-              >
+              <h2 className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>Fila ativa</h2>
+              <Link to="/demandas" className="text-sm font-semibold" style={{ color: 'var(--ctp-navy)' }}>
                 Ver todas
               </Link>
             </div>
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="ctp-card overflow-hidden">
               {loading ? (
-                <div className="px-4 py-8 text-center text-sm text-slate-500">
+                <div className="px-4 py-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
                   Carregando...
                 </div>
               ) : filaAtiva.length > 0 ? (
                 <>
-                  <div className="flex items-center justify-between gap-2 border-b border-slate-100 px-2 py-1">
-                    <button
-                      type="button"
-                      onClick={() => scrollCarousel('prev')}
-                      className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
-                      aria-label="Anterior"
-                      disabled={!temMultiplasPaginas}
+                  {temMultiplasPaginas && (
+                    <div
+                      className="flex items-center justify-between gap-2 px-2 py-1"
+                      style={{ borderBottom: '1px solid var(--border-default)' }}
                     >
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                    </button>
-                    <span className="text-xs text-slate-500">
-                      Página {carouselPage + 1}/{totalPages}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => scrollCarousel('next')}
-                      className="rounded-lg p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50"
-                      aria-label="Próximo"
-                      disabled={!temMultiplasPaginas}
-                    >
-                      <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                  <div className="grid grid-cols-3 grid-rows-3 gap-2 py-3 px-2 min-h-[280px]">
+                      <button
+                        type="button"
+                        onClick={() => scrollCarousel('prev')}
+                        className="btn btn-ghost btn-sm"
+                        aria-label="Anterior"
+                      >
+                        <ChevronLeft size={18} />
+                      </button>
+                      <span className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                        Página {carouselPage + 1}/{totalPages}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => scrollCarousel('next')}
+                        className="btn btn-ghost btn-sm"
+                        aria-label="Próximo"
+                      >
+                        <ChevronRight size={18} />
+                      </button>
+                    </div>
+                  )}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 p-3">
                     {filaAtivaPage.map((ticket) => {
                       const whoActive = activeByTicket.get(ticket.id)
                       return (
-                      <div
-                        key={ticket.id}
-                        className={`rounded-lg border px-3 py-2 transition-colors flex flex-col min-h-0 ${getTicketCardClasses(ticket.categoria, ticket.prioridade)}`}
-                      >
-                        <div className="flex items-start gap-1.5">
-                          <Link
-                            to={`/demandas/${ticket.id}`}
-                            className="font-medium text-slate-800 hover:text-blue-600 line-clamp-2 flex-1 min-w-0"
-                          >
-                            {ticket.titulo}
-                          </Link>
-                          {whoActive && (
-                            <span
-                              className="shrink-0 rounded-full bg-emerald-500 p-1 text-white"
-                              title={`${whoActive} está trabalhando nesta demanda`}
-                              aria-label={`${whoActive} em trabalho`}
+                        <div
+                          key={ticket.id}
+                          className={`rounded-lg border p-3.5 transition-colors flex flex-col gap-2 min-h-0 ${getTicketCardClasses(ticket.categoria, ticket.prioridade)}`}
+                          style={{
+                            borderLeft: `3px solid ${
+                              ticket.prioridade === 'urgente' ? '#EF4444' : CATEGORIA_COR[ticket.categoria] ?? '#94A3B8'
+                            }`,
+                          }}
+                        >
+                          <div className="flex items-start gap-1.5">
+                            <Link
+                              to={`/demandas/${ticket.id}`}
+                              className="font-medium line-clamp-2 flex-1 min-w-0"
+                              style={{ color: 'var(--text-primary)' }}
                             >
-                              <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-                                <path d="M8 5v14l11-7z" />
-                              </svg>
-                            </span>
-                          )}
+                              {ticket.titulo}
+                            </Link>
+                            {whoActive && (
+                              <span
+                                className="shrink-0 rounded-full p-1 text-white"
+                                style={{ background: '#22C55E' }}
+                                title={`${whoActive} está trabalhando nesta demanda`}
+                              >
+                                <Play size={12} fill="currentColor" />
+                              </span>
+                            )}
+                          </div>
+                          <p className="mt-1 flex items-center gap-2 text-xs" style={{ color: 'var(--text-muted)' }}>
+                            <span className="line-clamp-1">{ticket.solicitante_nome}</span>
+                            {ticket.responsavel_nome && (
+                              <>
+                                <span>·</span>
+                                <UserAvatar
+                                  avatarUrl={ticket.responsavel_avatar_url}
+                                  name={ticket.responsavel_nome}
+                                  size="sm"
+                                  showName
+                                />
+                              </>
+                            )}
+                          </p>
+                          <div className="mt-2 flex flex-wrap gap-1.5">
+                            <TicketStatusPill status={ticket.status} />
+                          </div>
+                          <p className="mt-2 text-xs" style={{ color: 'var(--text-disabled)' }}>
+                            Prazo: {ticket.data_entrega ?? '—'}
+                          </p>
                         </div>
-                        <p className="mt-1 flex items-center gap-2 text-xs text-slate-500">
-                          <span className="line-clamp-1">{ticket.solicitante_nome}</span>
-                          {ticket.responsavel_nome && (
-                            <>
-                              <span>·</span>
-                              <UserAvatar
-                                avatarUrl={ticket.responsavel_avatar_url}
-                                name={ticket.responsavel_nome}
-                                size="sm"
-                                showName
-                              />
-                            </>
-                          )}
-                        </p>
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          <TicketStatusPill status={ticket.status} />
-                          {ticket.prioridade === 'urgente' && (
-                            <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">
-                              Urgente
-                            </span>
-                          )}
-                        </div>
-                        <p className="mt-2 text-xs text-slate-400">
-                          Prazo: {ticket.data_entrega ?? '—'}
-                        </p>
-                      </div>
-                    )})}
+                      )
+                    })}
                   </div>
                 </>
               ) : (
-                <ul className="divide-y divide-slate-100">
-                  {filaAtiva.map((ticket) => {
-                    const whoActive = activeByTicket.get(ticket.id)
-                    return (
-                    <li
-                      key={ticket.id}
-                      className={`flex items-center justify-between gap-3 rounded-lg border px-4 py-3 transition-colors ${getTicketCardClasses(ticket.categoria, ticket.prioridade)}`}
-                    >
-                      <div className="min-w-0 flex-1 flex items-center gap-2">
-                        {whoActive && (
-                          <span
-                            className="shrink-0 rounded-full bg-emerald-500 p-1 text-white"
-                            title={`${whoActive} está trabalhando nesta demanda`}
-                            aria-label={`${whoActive} em trabalho`}
-                          >
-                            <svg className="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-                              <path d="M8 5v14l11-7z" />
-                            </svg>
-                          </span>
-                        )}
-                        <div className="min-w-0 flex-1">
-                        <Link
-                          to={`/demandas/${ticket.id}`}
-                          className="font-medium text-slate-800 hover:text-blue-600"
-                        >
-                          {ticket.titulo}
-                        </Link>
-                        <p className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                          <span>{ticket.solicitante_nome}</span>
-                          {ticket.responsavel_nome && (
-                            <>
-                              <span>·</span>
-                              <UserAvatar
-                                avatarUrl={ticket.responsavel_avatar_url}
-                                name={ticket.responsavel_nome}
-                                size="sm"
-                                showName
-                              />
-                            </>
-                          )}
-                        </p>
-                        <div className="mt-2 flex flex-wrap gap-2">
-                          <TicketStatusPill status={ticket.status} />
-                          {ticket.prioridade === 'urgente' && (
-                            <span className="rounded-full bg-rose-100 px-2 py-0.5 text-xs font-medium text-rose-700">
-                              Urgente
-                            </span>
-                          )}
-                        </div>
-                        </div>
-                      </div>
-                      <span className="shrink-0 text-xs text-slate-400">
-                        {ticket.data_entrega ?? '—'}
-                      </span>
-                    </li>
-                  )})}
-                </ul>
-              )}
-              {!loading && filaAtiva.length === 0 && (
-                <div className="px-4 py-8 text-center text-sm text-slate-500">
-                  Nenhuma demanda na fila ativa.
+                <div className="empty-state">
+                  <Inbox size={32} />
+                  <p>Nenhuma demanda na fila ativa.</p>
+                  <p>Novas demandas aparecerão aqui.</p>
                 </div>
               )}
             </div>
           </div>
 
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-slate-700">
-              Alertas rápidos
-            </h2>
+            <h2 className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>Alertas rápidos</h2>
             <div className="space-y-3">
               <AlertCard
                 title="Demandas atrasadas"
@@ -378,42 +301,6 @@ export function DashboardPage() {
   )
 }
 
-function SummaryCard({
-  to,
-  label,
-  value,
-  className,
-}: {
-  to?: string
-  label: string
-  value: number
-  className: string
-}) {
-  const content = (
-    <>
-      <p className="text-2xl font-semibold">{value}</p>
-      <p className="mt-0.5 text-xs font-medium text-slate-500">{label}</p>
-    </>
-  )
-  if (to) {
-    return (
-      <Link
-        to={to}
-        className={`block rounded-xl border px-4 py-4 shadow-sm transition-shadow hover:shadow ${className}`}
-      >
-        {content}
-      </Link>
-    )
-  }
-  return (
-    <div
-      className={`rounded-xl border px-4 py-4 shadow-sm transition-shadow hover:shadow ${className}`}
-    >
-      {content}
-    </div>
-  )
-}
-
 function AlertCard({
   title,
   description,
@@ -427,22 +314,26 @@ function AlertCard({
   tone: 'critical' | 'warning'
   to: string
 }) {
-  const styles =
+  const c =
     tone === 'critical'
-      ? 'border-rose-200 bg-rose-50 text-rose-800 hover:bg-rose-100'
-      : 'border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100'
+      ? { bg: '#FEF2F2', border: '#FECACA', text: '#991B1B' }
+      : { bg: '#FFFBEB', border: '#FDE68A', text: '#92400E' }
 
   return (
     <Link
       to={to}
-      className={`block rounded-xl border px-4 py-3 shadow-sm transition-colors ${styles}`}
+      className="block rounded-lg px-4 py-3 transition-colors"
+      style={{ background: c.bg, border: `1px solid ${c.border}` }}
     >
       <div className="flex items-center justify-between gap-2">
         <div>
-          <p className="text-sm font-semibold">{title}</p>
-          <p className="text-xs opacity-90">{description}</p>
+          <p className="text-sm font-semibold" style={{ color: c.text }}>{title}</p>
+          <p className="text-xs" style={{ color: c.text, opacity: 0.8 }}>{description}</p>
         </div>
-        <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white/80 text-sm font-bold">
+        <span
+          className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-bold"
+          style={{ background: 'rgba(255,255,255,0.8)', color: c.text }}
+        >
           {value}
         </span>
       </div>

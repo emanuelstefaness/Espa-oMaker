@@ -13,26 +13,37 @@ const LABELS: Record<TicketStatus, string> = {
   cancelada: 'Cancelada',
 }
 
-/** Cores interpretativas: fundo claro, texto legível */
-const STYLES: Record<TicketStatus, string> = {
-  recebida: 'bg-slate-100 text-slate-700 border border-slate-300',
-  em_analise: 'bg-blue-50 text-blue-800 border border-blue-200',
-  orcamento_em_criacao: 'bg-sky-50 text-sky-800 border border-sky-200',
-  aguardando_aprovacao: 'bg-amber-50 text-amber-800 border border-amber-300',
-  aprovado: 'bg-emerald-50 text-emerald-800 border border-emerald-300',
-  em_producao: 'bg-violet-50 text-violet-800 border border-violet-300',
-  pos_processo: 'bg-fuchsia-50 text-fuchsia-800 border border-fuchsia-300',
-  pronta: 'bg-lime-50 text-lime-800 border border-lime-400',
-  entregue: 'bg-slate-100 text-slate-600 border border-slate-300',
-  cancelada: 'bg-rose-50 text-rose-800 border border-rose-300',
+/** Cores do design system CTP: fundo claro, texto legível, dot colorido */
+const STYLES: Record<TicketStatus, { bg: string; color: string; dot: string }> = {
+  recebida: { bg: '#F1F5F9', color: '#475569', dot: '#94A3B8' },
+  em_analise: { bg: '#EFF6FF', color: '#1E40AF', dot: '#3B82F6' },
+  orcamento_em_criacao: { bg: '#ECFEFF', color: '#155E75', dot: '#06B6D4' },
+  aguardando_aprovacao: { bg: '#FFFBEB', color: '#92400E', dot: '#F59E0B' },
+  aprovado: { bg: '#F0FDF4', color: '#14532D', dot: '#22C55E' },
+  em_producao: { bg: '#F5F3FF', color: '#5B21B6', dot: '#8B5CF6' },
+  pos_processo: { bg: '#FDF4FF', color: '#86198F', dot: '#D946EF' },
+  pronta: { bg: '#F7FEE7', color: '#3F6212', dot: '#84CC16' },
+  entregue: { bg: '#F0FDFA', color: '#134E4A', dot: '#14B8A6' },
+  cancelada: { bg: '#FEF2F2', color: '#991B1B', dot: '#EF4444' },
 }
 
+export const STATUS_LABELS = LABELS
+
 export function TicketStatusPill({ status }: { status: TicketStatus }) {
+  const s = STYLES[status]
   return (
-    <span
-      className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${STYLES[status]}`}
-    >
-      <span className="h-1.5 w-1.5 rounded-full bg-current opacity-80" />
+    <span className="badge" style={{ background: s.bg, color: s.color }}>
+      <span
+        style={{
+          width: '5px',
+          height: '5px',
+          borderRadius: '50%',
+          background: s.dot,
+          display: 'inline-block',
+          marginRight: '4px',
+          flexShrink: 0,
+        }}
+      />
       {LABELS[status]}
     </span>
   )

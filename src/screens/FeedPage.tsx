@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link } from 'react-router-dom'
+import { Rss } from 'lucide-react'
 import { LayoutShell } from '../components/LayoutShell'
 import { UserAvatar } from '../components/UserAvatar'
 import {
@@ -214,20 +215,14 @@ export function FeedPage() {
 
   return (
     <LayoutShell>
-      <section className="mx-auto max-w-2xl space-y-6 pb-8">
-        <header className="flex flex-wrap items-center justify-between gap-3">
+      <section className="space-y-6 pb-8">
+        <header className="page-header flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-800">Feed interno</h1>
-            <p className="mt-1 text-sm text-slate-500">
-              Atualizações, bugs e ideias da equipe. Vincule demandas quando fizer sentido.
-            </p>
+            <h1>Feed interno</h1>
+            <p>Atualizações, bugs e ideias da equipe. Vincule demandas quando fizer sentido.</p>
           </div>
           {appUser && (
-            <button
-              type="button"
-              onClick={() => setShowNewPostModal(true)}
-              className="rounded-lg bg-blue-500 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-blue-600"
-            >
+            <button type="button" onClick={() => setShowNewPostModal(true)} className="btn btn-lime">
               + Novo post
             </button>
           )}
@@ -246,7 +241,7 @@ export function FeedPage() {
               aria-hidden="true"
             />
             <div
-              className="relative w-full max-w-md rounded-xl border border-slate-200 bg-white p-4 shadow-xl"
+              className="modal-box relative w-full max-w-md p-4"
               onClick={(e) => e.stopPropagation()}
               onMouseDown={(e) => e.stopPropagation()}
             >
@@ -265,11 +260,11 @@ export function FeedPage() {
               </div>
               <form onSubmit={handleSubmit} className="mt-3 space-y-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-500">Tipo</label>
+                  <label className="ctp-label">Tipo</label>
                   <select
                     value={tipo}
                     onChange={(e) => setTipo(e.target.value as FeedPostTipo)}
-                    className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    className="ctp-input mt-0.5"
                   >
                     <option value="atualizacao">Atualização</option>
                     <option value="bug">Bug</option>
@@ -277,24 +272,24 @@ export function FeedPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500">Conteúdo</label>
+                  <label className="ctp-label">Conteúdo</label>
                   <textarea
                     value={conteudo}
                     onChange={(e) => setConteudo(e.target.value)}
                     placeholder="Escreva algo para a equipe..."
                     rows={3}
                     required
-                    className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    className="ctp-input mt-0.5"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500">
+                  <label className="ctp-label">
                     Vincular demanda (opcional)
                   </label>
                   <select
                     value={ticketId}
                     onChange={(e) => setTicketId(e.target.value)}
-                    className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    className="ctp-input mt-0.5"
                   >
                     <option value="">Selecionar demanda</option>
                     {ticketOptions.map((t) => (
@@ -305,7 +300,7 @@ export function FeedPage() {
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="new-post-files" className="block text-xs font-medium text-slate-500">
+                  <label htmlFor="new-post-files" className="ctp-label">
                     Anexar arquivos
                   </label>
                   <input
@@ -344,14 +339,14 @@ export function FeedPage() {
                   <button
                     type="button"
                     onClick={closeModal}
-                    className="flex-1 rounded-lg border border-slate-300 bg-white py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    className="btn btn-outline flex-1"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={publishing || !conteudo.trim()}
-                    className="flex-1 rounded-lg bg-blue-500 py-2.5 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
+                    className="btn btn-primary flex-1"
                   >
                     {publishing ? 'Publicando...' : 'Publicar'}
                   </button>
@@ -373,7 +368,7 @@ export function FeedPage() {
               onClick={() => !savingEdit && setEditingPostId(null)}
               aria-hidden="true"
             />
-            <div className="relative w-full max-w-md rounded-xl border border-slate-200 bg-white p-4 shadow-xl">
+            <div className="modal-box relative w-full max-w-md p-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h2 id="edit-modal-title" className="text-sm font-semibold text-slate-800">
                   Editar post
@@ -389,11 +384,11 @@ export function FeedPage() {
               </div>
               <form onSubmit={handleEditPostSubmit} className="mt-3 space-y-3">
                 <div>
-                  <label className="block text-xs font-medium text-slate-500">Tipo</label>
+                  <label className="ctp-label">Tipo</label>
                   <select
                     value={editTipo}
                     onChange={(e) => setEditTipo(e.target.value as FeedPostTipo)}
-                    className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    className="ctp-input mt-0.5"
                   >
                     <option value="atualizacao">Atualização</option>
                     <option value="bug">Bug</option>
@@ -401,24 +396,24 @@ export function FeedPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500">Conteúdo</label>
+                  <label className="ctp-label">Conteúdo</label>
                   <textarea
                     value={editConteudo}
                     onChange={(e) => setEditConteudo(e.target.value)}
                     placeholder="Conteúdo do post"
                     rows={3}
                     required
-                    className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    className="ctp-input mt-0.5"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-500">
+                  <label className="ctp-label">
                     Vincular demanda (opcional)
                   </label>
                   <select
                     value={editTicketId}
                     onChange={(e) => setEditTicketId(e.target.value)}
-                    className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-800 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                    className="ctp-input mt-0.5"
                   >
                     <option value="">Nenhuma</option>
                     {ticketOptions.map((t) => (
@@ -432,14 +427,14 @@ export function FeedPage() {
                   <button
                     type="button"
                     onClick={() => setEditingPostId(null)}
-                    className="flex-1 rounded-lg border border-slate-300 bg-white py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+                    className="btn btn-outline flex-1"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={savingEdit || !editConteudo.trim()}
-                    className="flex-1 rounded-lg bg-blue-500 py-2.5 text-sm font-medium text-white hover:bg-blue-600 disabled:opacity-50"
+                    className="btn btn-primary flex-1"
                   >
                     {savingEdit ? 'Salvando...' : 'Salvar'}
                   </button>
@@ -449,28 +444,32 @@ export function FeedPage() {
           </div>
         )}
 
-        {error && (
-          <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
-            {error}
-          </div>
-        )}
-
-        <div className="space-y-4">
-          <h2 className="text-sm font-semibold text-slate-700">Timeline</h2>
+        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px] lg:items-start">
+          <div className="space-y-4 min-w-0">
+            {error && (
+              <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+                {error}
+              </div>
+            )}
+            <h2 className="text-xs font-bold uppercase tracking-wider" style={{ color: 'var(--text-muted)' }}>Timeline</h2>
           {loading ? (
-            <p className="py-8 text-center text-sm text-slate-500">
+            <div className="ctp-card py-10 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
               Carregando...
-            </p>
+            </div>
           ) : posts.length === 0 ? (
-            <p className="rounded-xl border border-slate-100 bg-white py-12 text-center text-sm text-slate-500">
-              Nenhum post ainda. Seja o primeiro a publicar.
-            </p>
+            <div className="ctp-card">
+              <div className="empty-state">
+                <Rss size={32} />
+                <p>Nenhum post ainda.</p>
+                <p>Seja o primeiro a publicar uma atualização para a equipe.</p>
+              </div>
+            </div>
           ) : (
             <ul className="space-y-4">
               {posts.map((post) => (
                 <li
                   key={post.id}
-                  className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
+                  className="ctp-card p-4"
                 >
                   <div className="flex gap-3">
                     <UserAvatar
@@ -520,7 +519,7 @@ export function FeedPage() {
                       {post.ticket_id && (
                         <Link
                           to={`/demandas/${post.ticket_id}`}
-                          className="mt-2 inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700"
+                          className="mt-2 inline-flex items-center text-sm font-semibold text-[#063A70] hover:text-[#042c56]"
                         >
                           {post.ticket_codigo
                             ? `${post.ticket_codigo} – `
@@ -612,7 +611,7 @@ export function FeedPage() {
                                 }
                               }}
                               placeholder="Escreva um comentário..."
-                              className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+                              className="ctp-input min-w-0 flex-1"
                             />
                             <button
                               type="button"
@@ -621,7 +620,7 @@ export function FeedPage() {
                                 submittingCommentPostId === post.id ||
                                 !(commentTextByPostId[post.id] ?? '').trim()
                               }
-                              className="shrink-0 rounded-lg bg-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-300 disabled:opacity-50"
+                              className="btn btn-primary btn-sm shrink-0"
                             >
                               {submittingCommentPostId === post.id
                                 ? '...'
@@ -636,6 +635,29 @@ export function FeedPage() {
               ))}
             </ul>
           )}
+          </div>
+
+          <aside className="hidden lg:block">
+            <div className="ctp-card p-5" style={{ position: 'sticky', top: '1.25rem' }}>
+              <h3 style={{ marginBottom: '0.875rem' }}>Sobre o feed</h3>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '1rem' }}>
+                Compartilhe atualizações, bugs e ideias com a equipe. Vincule uma demanda quando o post for sobre ela.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {[
+                  { c: '#3B82F6', t: 'Atualização', d: 'Novidades e progresso' },
+                  { c: '#EF4444', t: 'Bug', d: 'Problemas a resolver' },
+                  { c: '#84CC16', t: 'Ideia', d: 'Sugestões e melhorias' },
+                ].map((x) => (
+                  <div key={x.t} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 99, background: x.c, flexShrink: 0 }} />
+                    <span style={{ fontSize: '12.5px', fontWeight: 600, color: 'var(--text-primary)' }}>{x.t}</span>
+                    <span style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>· {x.d}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </aside>
         </div>
       </section>
     </LayoutShell>

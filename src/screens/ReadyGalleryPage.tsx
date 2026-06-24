@@ -50,17 +50,13 @@ export function ReadyGalleryPage() {
   return (
     <LayoutShell>
       <section className="space-y-6">
-        <header>
-          <h1 className="text-2xl font-semibold text-slate-800">
-            Prontos e entregues
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
-            Vitrine dos trabalhos concluídos no Espaço Maker.
-          </p>
+        <header className="page-header">
+          <h1>Prontos e entregues</h1>
+          <p>Vitrine dos trabalhos concluídos no Espaço Maker.</p>
         </header>
 
         {loading && (
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
+          <div className="ctp-card px-4 py-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
             Carregando galeria...
           </div>
         )}
@@ -77,7 +73,7 @@ export function ReadyGalleryPage() {
               <Link
                 key={item.id}
                 to={`/demandas/${item.id}`}
-                className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
+                className="group ctp-card overflow-hidden transition-shadow hover:shadow-md"
               >
                 <div className="relative h-40 w-full overflow-hidden bg-slate-100">
                   {item.photo ? (
@@ -117,7 +113,7 @@ export function ReadyGalleryPage() {
               </Link>
             ))}
             {items.length === 0 && (
-              <div className="col-span-full rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
+              <div className="col-span-full ctp-card px-4 py-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
                 Nenhum item pronto ou entregue com foto para exibir.
               </div>
             )}

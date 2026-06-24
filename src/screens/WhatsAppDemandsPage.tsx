@@ -65,43 +65,28 @@ export function WhatsAppDemandsPage() {
     }
     return (
       <div className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+        <table className="ctp-table">
           <thead>
-            <tr className="border-b border-slate-200 bg-slate-50/80">
-              <th className="px-4 py-3 font-medium text-slate-600">
-                Demanda
-              </th>
-              <th className="px-4 py-3 font-medium text-slate-600">
-                Solicitante
-              </th>
-              <th className="px-4 py-3 font-medium text-slate-600">
-                Status
-              </th>
-              <th className="px-4 py-3 font-medium text-slate-600">
-                Responsável
-              </th>
-              <th className="px-4 py-3 font-medium text-slate-600">
-                Prazo
-              </th>
-              <th className="px-4 py-3 font-medium text-slate-600">
-                Ação
-              </th>
+            <tr>
+              <th>Demanda</th>
+              <th>Solicitante</th>
+              <th>Status</th>
+              <th>Responsável</th>
+              <th>Prazo</th>
+              <th>Ação</th>
             </tr>
           </thead>
           <tbody>
             {rows.map((t) => (
-              <tr
-                key={t.id}
-                className="border-b border-slate-100 hover:bg-slate-50/50"
-              >
+              <tr key={t.id}>
                 <td className="px-4 py-3">
-                  <span className="font-medium text-slate-800">
+                  <p className="font-semibold" style={{ color: 'var(--text-primary)' }}>
                     {t.titulo}
-                  </span>
+                  </p>
                   {t.codigo && (
-                    <span className="ml-2 text-xs text-slate-400">
+                    <p className="mt-0.5 text-xs" style={{ color: 'var(--text-muted)', fontFamily: 'monospace' }}>
                       {t.codigo}
-                    </span>
+                    </p>
                   )}
                 </td>
                 <td className="px-4 py-3 text-slate-600">
@@ -133,7 +118,7 @@ export function WhatsAppDemandsPage() {
                 <td className="px-4 py-3">
                   <Link
                     to={`/demandas/${t.id}`}
-                    className="text-blue-600 hover:underline"
+                    className="font-semibold text-[#063A70] hover:underline"
                   >
                     Ver
                   </Link>
@@ -149,11 +134,9 @@ export function WhatsAppDemandsPage() {
   return (
     <LayoutShell>
       <section className="space-y-6">
-        <header>
-          <h1 className="text-2xl font-semibold text-slate-800">
-            Demandas WhatsApp
-          </h1>
-          <p className="mt-1 text-sm text-slate-500">
+        <header className="page-header">
+          <h1>Demandas WhatsApp</h1>
+          <p>
             Solicitações vindas do formulário público (link WhatsApp). Atribua responsável e altere status no detalhe para seguir o fluxo.
           </p>
         </header>
@@ -164,10 +147,13 @@ export function WhatsAppDemandsPage() {
           </div>
         )}
 
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-100 px-4 py-3">
-            <span className="text-sm font-medium text-slate-600">
-              {semResponsavel.length} demanda(s) sem responsável
+        <div className="ctp-card overflow-hidden">
+          <div className="flex items-center gap-2 px-7 py-3.5" style={{ borderBottom: '1px solid var(--border-default)' }}>
+            <span className="badge" style={{ background: '#FEF3C7', color: '#92400E' }}>
+              {semResponsavel.length}
+            </span>
+            <span className="text-[13px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
+              sem responsável
             </span>
           </div>
           {renderTabela(
@@ -176,10 +162,13 @@ export function WhatsAppDemandsPage() {
           )}
         </div>
 
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-100 px-4 py-3">
-            <span className="text-sm font-medium text-slate-600">
-              {comResponsavel.length} demanda(s) com responsável
+        <div className="ctp-card overflow-hidden">
+          <div className="flex items-center gap-2 px-7 py-3.5" style={{ borderBottom: '1px solid var(--border-default)' }}>
+            <span className="badge" style={{ background: 'rgba(161,240,31,0.18)', color: '#3F6212' }}>
+              {comResponsavel.length}
+            </span>
+            <span className="text-[13px] font-semibold" style={{ color: 'var(--text-secondary)' }}>
+              com responsável
             </span>
           </div>
           {renderTabela(

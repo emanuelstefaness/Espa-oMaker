@@ -200,42 +200,40 @@ export function FinancialReportsPage() {
   return (
     <LayoutShell>
       <section className="space-y-6">
-        <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <header className="page-header flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-800">Relatório financeiro</h1>
-            <p className="mt-1 text-sm text-slate-500">
+            <h1>Relatório financeiro</h1>
+            <p>
               Visão completa de receitas, custos e resultados. Receita monetária só contabiliza quando <strong>paga</strong> ou quando configurada como <strong>recorrente</strong>.
             </p>
           </div>
-          <Link to="/relatorios" className="text-sm font-medium text-blue-600 hover:text-blue-700">
+          <Link to="/relatorios" className="text-sm font-semibold" style={{ color: 'var(--ctp-navy)' }}>
             Ver indicadores gerais →
           </Link>
         </header>
 
-        <div className="flex flex-wrap items-end gap-3 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="ctp-card flex flex-wrap items-end gap-3 p-4">
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">Início</label>
+            <label className="ctp-label">Início</label>
             <input
               type="date"
               value={dataInicio}
               onChange={(e) => setDataInicio(e.target.value)}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+              className="ctp-input"
+              style={{ width: 'auto' }}
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">Fim</label>
+            <label className="ctp-label">Fim</label>
             <input
               type="date"
               value={dataFim}
               onChange={(e) => setDataFim(e.target.value)}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+              className="ctp-input"
+              style={{ width: 'auto' }}
             />
           </div>
-          <button
-            type="button"
-            onClick={() => void load()}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-          >
+          <button type="button" onClick={() => void load()} className="btn btn-primary">
             Aplicar
           </button>
           <button
@@ -245,18 +243,18 @@ export function FinancialReportsPage() {
               setDataFim('')
               setTimeout(() => void load(), 0)
             }}
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50"
+            className="btn btn-outline"
           >
             Limpar
           </button>
-          <div className="ml-auto text-xs text-slate-500">
+          <div className="ml-auto text-xs" style={{ color: 'var(--text-muted)' }}>
             Período: <span className="font-medium text-slate-700">{inicioEfetivo}</span> a{' '}
             <span className="font-medium text-slate-700">{fimEfetivo}</span>
           </div>
         </div>
 
         {loading && (
-          <div className="rounded-xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500">
+          <div className="ctp-card px-4 py-8 text-center text-sm" style={{ color: 'var(--text-muted)' }}>
             Calculando financeiro...
           </div>
         )}
@@ -277,14 +275,14 @@ export function FinancialReportsPage() {
             </div>
 
             <div className="grid gap-6 lg:grid-cols-2">
-              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="ctp-card overflow-hidden">
                 <div className="border-b border-slate-100 px-4 py-3">
                   <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Por tipo de demanda</p>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="ctp-table w-full">
                     <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      <tr>
                         <th className="px-4 py-3">Tipo</th>
                         <th className="px-4 py-3">Receita monetária</th>
                         <th className="px-4 py-3">Contrapartida</th>
@@ -316,14 +314,14 @@ export function FinancialReportsPage() {
                 </div>
               </div>
 
-              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+              <div className="ctp-card overflow-hidden">
                 <div className="border-b border-slate-100 px-4 py-3">
                   <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Por categoria</p>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="ctp-table w-full">
                     <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      <tr>
                         <th className="px-4 py-3">Categoria</th>
                         <th className="px-4 py-3">Receita monetária</th>
                         <th className="px-4 py-3">Contrapartida</th>
@@ -354,7 +352,7 @@ export function FinancialReportsPage() {
               </div>
             </div>
 
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
+            <div className="ctp-card overflow-hidden">
               <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 px-4 py-3">
                 <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Top demandas por resultado</p>
                 <span className="text-xs text-slate-500">Resultado = monetária reconhecida − custo</span>
@@ -362,7 +360,7 @@ export function FinancialReportsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <tr>
                       <th className="px-4 py-3">Demanda</th>
                       <th className="px-4 py-3">Cliente</th>
                       <th className="px-4 py-3">Tipo</th>

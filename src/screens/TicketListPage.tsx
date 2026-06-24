@@ -20,7 +20,8 @@ import { getActiveSessionsAll } from '../services/workSessions'
 import { listAppUsers } from '../services/appUsers'
 import type { AppUserOption } from '../services/appUsers'
 import { useAuth } from '../auth/AuthContext'
-import { getTicketCardClasses } from '../constants/ticketOptions'
+import { getTicketCardClasses, CATEGORIA_COR } from '../constants/ticketOptions'
+import { CATEGORIA_LABELS } from '../components/Badges'
 
 const TASK_STATUS_LABEL: Record<string, string> = {
   pendente: 'Pendente',
@@ -210,7 +211,12 @@ export function TicketListPage() {
       className={`transition-colors ${getTicketCardClasses(ticket.categoria, ticket.prioridade)}`}
     >
       <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
+          <span
+            className="h-2 w-2 shrink-0 rounded-full"
+            style={{ background: CATEGORIA_COR[ticket.categoria] ?? '#94A3B8' }}
+            title={CATEGORIA_LABELS[ticket.categoria]}
+          />
           {whoActive && (
             <span
               className="shrink-0 rounded-full bg-emerald-500 p-1 text-white"
@@ -225,7 +231,7 @@ export function TicketListPage() {
           <div className="min-w-0">
             <Link
               to={`/demandas/${ticket.id}`}
-              className="font-medium text-slate-800 hover:text-blue-600"
+              className="font-semibold text-slate-800 hover:text-[#063A70]"
             >
               {ticket.titulo}
             </Link>
@@ -256,7 +262,7 @@ export function TicketListPage() {
       <td className="px-4 py-3 text-right">
         <Link
           to={`/demandas/${ticket.id}`}
-          className="font-medium text-blue-600 hover:text-blue-700"
+          className="font-semibold text-[#063A70] hover:text-[#042c56]"
         >
           Ver
         </Link>
@@ -268,17 +274,15 @@ export function TicketListPage() {
   return (
     <LayoutShell>
       <section className="space-y-6">
-        <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <header className="page-header flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-800">
-              {isMinhasDemandas ? 'Minhas demandas' : 'Todas as demandas'}
-            </h1>
-            <p className="mt-1 text-sm text-slate-500">
+            <h1>{isMinhasDemandas ? 'Minhas demandas' : 'Todas as demandas'}</h1>
+            <p className="mt-1 text-sm" style={{ color: 'var(--text-muted)' }}>
               {isMinhasDemandas ? (
                 <>
-                  Demandas em que você é responsável ou colaborador.
+                  Demandas em que você é responsável ou colaborador.{' '}
                   {!loading && (
-                    <span className="ml-1 font-medium text-slate-600">
+                    <span className="font-semibold" style={{ color: 'var(--text-secondary)' }}>
                       {ticketsEmAndamento.length} em andamento, {ticketsEntregues.length} entregue{ticketsEntregues.length !== 1 ? 's' : ''}
                       {myTasks.length > 0 && ` · ${myTasks.length} task${myTasks.length !== 1 ? 's' : ''}`}.
                     </span>
@@ -286,9 +290,9 @@ export function TicketListPage() {
                 </>
               ) : separarEntregues ? (
                 <>
-                  Demandas em andamento primeiro; entregues ficam no bloco abaixo.
+                  Demandas em andamento primeiro; entregues ficam no bloco abaixo.{' '}
                   {!loading && (
-                    <span className="ml-1 font-medium text-slate-600">
+                    <span className="font-semibold" style={{ color: 'var(--text-secondary)' }}>
                       {ticketsEmAndamento.length} em andamento, {ticketsEntregues.length}{' '}
                       entregue{ticketsEntregues.length !== 1 ? 's' : ''}.
                     </span>
@@ -301,17 +305,11 @@ export function TicketListPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {isMinhasDemandas && (
-              <Link
-                to="/demandas"
-                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
+              <Link to="/demandas" className="btn btn-outline">
                 Ver todas as demandas
               </Link>
             )}
-            <Link
-              to="/demandas/nova"
-              className="inline-flex items-center gap-2 rounded-xl bg-emerald-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-emerald-600"
-            >
+            <Link to="/demandas/nova" className="btn btn-lime">
               + Nova demanda
             </Link>
           </div>
@@ -319,7 +317,7 @@ export function TicketListPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="flex flex-wrap items-center gap-3 rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
+          className="ctp-card flex flex-wrap items-center gap-3 p-3"
         >
           <div className="relative min-w-[200px] flex-1">
             <input
@@ -327,13 +325,14 @@ export function TicketListPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Buscar por título"
-              className="w-full rounded-lg border border-slate-300 bg-slate-50 py-2 pl-3 pr-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              className="ctp-input"
             />
           </div>
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as TicketStatus | 'atrasadas' | '')}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+            className="ctp-input"
+            style={{ width: 'auto' }}
           >
             <option value="">Todos os status</option>
             <option value="recebida">Recebida</option>
@@ -351,7 +350,8 @@ export function TicketListPage() {
           <select
             value={tipo}
             onChange={(e) => setTipo(e.target.value as TicketTipo | '')}
-            className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+            className="ctp-input"
+            style={{ width: 'auto' }}
           >
             <option value="">Todos os tipos</option>
             <option value="interna">Interna</option>
@@ -361,7 +361,8 @@ export function TicketListPage() {
             <select
               value={responsavelId}
               onChange={(e) => setResponsavelId(e.target.value)}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-700 focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-400"
+              className="ctp-input"
+              style={{ width: 'auto' }}
             >
               <option value="">Todos os responsáveis</option>
               {appUsers.map((u) => (
@@ -371,17 +372,10 @@ export function TicketListPage() {
               ))}
             </select>
           )}
-          <button
-            type="submit"
-            className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
+          <button type="submit" className="btn btn-primary">
             Filtrar
           </button>
-          <button
-            type="button"
-            onClick={limparFiltros}
-            className="text-sm text-slate-500 hover:text-slate-700"
-          >
+          <button type="button" onClick={limparFiltros} className="btn btn-ghost">
             Limpar
           </button>
         </form>
@@ -393,15 +387,15 @@ export function TicketListPage() {
         )}
 
         {isMinhasDemandas && (
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-700">
+          <div className="ctp-card p-5">
+            <h2 className="text-[15px] font-bold" style={{ color: 'var(--text-primary)' }}>
               Tasks atribuídas a mim
             </h2>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <p className="mt-1 text-[13px]" style={{ color: 'var(--text-muted)' }}>
               Tasks de qualquer demanda em que você é o responsável.
             </p>
             {myTasks.length === 0 ? (
-              <p className="mt-3 text-sm text-slate-500">Nenhuma task atribuída a você.</p>
+              <p className="mt-4 text-sm" style={{ color: 'var(--text-muted)' }}>Nenhuma task atribuída a você.</p>
             ) : (
               <ul className="mt-3 space-y-2">
                 {myTasks.map((task) => (
@@ -428,7 +422,7 @@ export function TicketListPage() {
                     </span>
                     <Link
                       to={`/demandas/${task.ticket_id}`}
-                      className="shrink-0 text-sm font-medium text-blue-600 hover:text-blue-700"
+                      className="shrink-0 text-sm font-semibold text-[#063A70] hover:text-[#042c56]"
                     >
                       Ver demanda
                     </Link>
@@ -441,8 +435,8 @@ export function TicketListPage() {
 
         {isMinhasDemandas ? (
           <>
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-200 bg-slate-50/80 px-4 py-2">
+            <div className="ctp-card overflow-hidden">
+              <div className="px-7 py-3.5" style={{ borderBottom: '1px solid var(--border-default)', background: 'var(--bg-muted)' }}>
                 <h2 className="text-sm font-semibold text-slate-700">
                   Em andamento
                 </h2>
@@ -451,9 +445,9 @@ export function TicketListPage() {
                 </p>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="ctp-table w-full">
                   <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <tr>
                       <th className="px-4 py-3">Demanda</th>
                       <th className="px-4 py-3">Responsável</th>
                       <th className="px-4 py-3">Status</th>
@@ -486,8 +480,8 @@ export function TicketListPage() {
               )}
             </div>
             {ticketsEntregues.length > 0 && (
-              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                <div className="border-b border-slate-200 bg-emerald-50/80 px-4 py-2">
+              <div className="ctp-card overflow-hidden">
+                <div className="px-7 py-3.5" style={{ borderBottom: '1px solid var(--border-default)', background: 'rgba(161,240,31,0.10)' }}>
                   <h2 className="text-sm font-semibold text-slate-700">
                     Entregues
                   </h2>
@@ -496,9 +490,9 @@ export function TicketListPage() {
                   </p>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="ctp-table w-full">
                     <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      <tr>
                         <th className="px-4 py-3">Demanda</th>
                         <th className="px-4 py-3">Responsável</th>
                         <th className="px-4 py-3">Status</th>
@@ -514,12 +508,12 @@ export function TicketListPage() {
               </div>
             )}
             {hasMore && !loading && (
-              <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <div className="ctp-card px-4 py-3">
                 <button
                   type="button"
                   onClick={loadMore}
                   disabled={loadingMore}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                  className="btn btn-outline w-full"
                 >
                   {loadingMore ? 'Carregando...' : 'Carregar mais'}
                 </button>
@@ -527,8 +521,8 @@ export function TicketListPage() {
             )}
           </>
         ) : status === 'entregue' ? (
-          <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div className="border-b border-slate-200 bg-emerald-50/80 px-4 py-2">
+          <div className="ctp-card overflow-hidden">
+            <div className="px-7 py-3.5" style={{ borderBottom: '1px solid var(--border-default)', background: 'rgba(161,240,31,0.10)' }}>
               <h2 className="text-sm font-semibold text-slate-700">Entregues</h2>
               <p className="text-xs text-slate-500">
                 Demandas com status entregue (filtro ativo).
@@ -537,7 +531,7 @@ export function TicketListPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <tr>
                     <th className="px-4 py-3">Demanda</th>
                     <th className="px-4 py-3">Responsável</th>
                     <th className="px-4 py-3">Status</th>
@@ -569,7 +563,7 @@ export function TicketListPage() {
                   type="button"
                   onClick={loadMore}
                   disabled={loadingMore}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                  className="btn btn-outline w-full"
                 >
                   {loadingMore ? 'Carregando...' : 'Carregar mais'}
                 </button>
@@ -578,8 +572,8 @@ export function TicketListPage() {
           </div>
         ) : (
           <>
-            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-              <div className="border-b border-slate-200 bg-slate-50/80 px-4 py-2">
+            <div className="ctp-card overflow-hidden">
+              <div className="px-7 py-3.5" style={{ borderBottom: '1px solid var(--border-default)', background: 'var(--bg-muted)' }}>
                 <h2 className="text-sm font-semibold text-slate-700">
                   Em andamento
                 </h2>
@@ -588,9 +582,9 @@ export function TicketListPage() {
                 </p>
               </div>
               <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+                <table className="ctp-table w-full">
                   <thead>
-                    <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <tr>
                       <th className="px-4 py-3">Demanda</th>
                       <th className="px-4 py-3">Responsável</th>
                       <th className="px-4 py-3">Status</th>
@@ -627,8 +621,8 @@ export function TicketListPage() {
                 )}
             </div>
             {ticketsEntregues.length > 0 && (
-              <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                <div className="border-b border-slate-200 bg-emerald-50/80 px-4 py-2">
+              <div className="ctp-card overflow-hidden">
+                <div className="px-7 py-3.5" style={{ borderBottom: '1px solid var(--border-default)', background: 'rgba(161,240,31,0.10)' }}>
                   <h2 className="text-sm font-semibold text-slate-700">
                     Entregues
                   </h2>
@@ -637,9 +631,9 @@ export function TicketListPage() {
                   </p>
                 </div>
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <table className="ctp-table w-full">
                     <thead>
-                      <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      <tr>
                         <th className="px-4 py-3">Demanda</th>
                         <th className="px-4 py-3">Responsável</th>
                         <th className="px-4 py-3">Status</th>
@@ -655,12 +649,12 @@ export function TicketListPage() {
               </div>
             )}
             {hasMore && !loading && (
-              <div className="rounded-xl border border-slate-200 bg-white px-4 py-3">
+              <div className="ctp-card px-4 py-3">
                 <button
                   type="button"
                   onClick={loadMore}
                   disabled={loadingMore}
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:opacity-50"
+                  className="btn btn-outline w-full"
                 >
                   {loadingMore ? 'Carregando...' : 'Carregar mais'}
                 </button>
@@ -670,7 +664,7 @@ export function TicketListPage() {
         )}
 
         {!isMinhasDemandas && minhas.length > 0 && (
-          <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="ctp-card p-4">
             <h2 className="text-sm font-semibold text-slate-700">
               Minhas demandas
             </h2>
@@ -685,7 +679,7 @@ export function TicketListPage() {
                 >
                   <Link
                     to={`/demandas/${ticket.id}`}
-                    className="text-slate-700 hover:text-blue-600"
+                    className="text-slate-700 hover:text-[#063A70]"
                   >
                     {ticket.titulo}
                   </Link>
@@ -695,7 +689,7 @@ export function TicketListPage() {
             </ul>
             <Link
               to="/demandas/minhas"
-              className="mt-3 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
+              className="mt-3 inline-block text-sm font-semibold text-[#063A70] hover:text-[#042c56]"
             >
               Ver todas as minhas →
             </Link>
