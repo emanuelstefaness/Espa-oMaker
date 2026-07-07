@@ -1292,8 +1292,10 @@ function mapRowToTicket(row: any): Ticket {
         }
       : undefined
 
+  // Considera orçamento lançado quando os campos existem (não-nulos),
+  // inclusive quando o valor é 0 (cortesia / sem cobrança).
   const orcamento =
-    row.preco_por_peca && row.quantidade_orcamento
+    row.preco_por_peca != null && row.quantidade_orcamento != null
       ? {
           preco_por_peca: Number(row.preco_por_peca),
           quantidade: Number(row.quantidade_orcamento),

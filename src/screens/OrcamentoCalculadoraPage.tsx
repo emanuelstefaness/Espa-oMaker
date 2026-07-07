@@ -154,7 +154,7 @@ export function OrcamentoCalculadoraPage() {
     setInp((prev) => ({ ...prev, fatores: { ...prev.fatores, [key]: !prev.fatores[key] } }))
 
   const vincularAoPedido = async () => {
-    if (!pedidoSelecionado || calc.precoFinal <= 0) return
+    if (!pedidoSelecionado || calc.precoFinal < 0) return
     setVinculando(true)
     setVinculoOk(null)
     setVinculoErro(null)
@@ -417,7 +417,7 @@ export function OrcamentoCalculadoraPage() {
             <button
               type="button"
               onClick={vincularAoPedido}
-              disabled={!pedidoId || vinculando || calc.precoFinal <= 0}
+              disabled={!pedidoId || vinculando || calc.precoFinal < 0}
               className="btn btn-primary"
               style={{ gap: '6px', flexShrink: 0 }}
             >
@@ -611,7 +611,7 @@ export function OrcamentoCalculadoraPage() {
                 </p>
               </div>
 
-              <button onClick={baixarPDF} disabled={gerando || calc.precoFinal <= 0} className="btn btn-lime" style={{ width: '100%', justifyContent: 'center', fontWeight: 800, fontSize: '13px', padding: '10px', gap: '6px' }}>
+              <button onClick={baixarPDF} disabled={gerando || calc.precoFinal < 0} className="btn btn-lime" style={{ width: '100%', justifyContent: 'center', fontWeight: 800, fontSize: '13px', padding: '10px', gap: '6px' }}>
                 <Download size={14} />
                 {gerando ? 'Gerando PDF…' : 'Baixar PDF do orçamento'}
               </button>
