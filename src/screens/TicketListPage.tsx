@@ -197,14 +197,14 @@ export function TicketListPage() {
         { ...filters, responsavelOuColaboradorId: appUser.id },
         { limit: 5000, orderBy: 'data_entrega', orderDirection: 'asc' },
       )
-      const lista = status === 'cancelada' ? todas : todas.filter((t) => t.status !== 'cancelada')
+      const lista = todas.filter((t) => t.status !== 'entregue' && t.status !== 'cancelada')
       const partes: string[] = []
       if (search) partes.push(`Busca "${search}"`)
       if (status) partes.push(`Status: ${status === 'atrasadas' ? 'Atrasadas' : STATUS_LABELS[status]}`)
       if (tipo) partes.push(`Tipo: ${tipo === 'interna' ? 'Interna' : 'Externa'}`)
       const info = {
         usuarioNome: appUser.name,
-        filtros: partes.length ? partes.join(' · ') : 'nenhum (todas as minhas demandas)',
+        filtros: ['Em andamento (exclui entregues e canceladas)', ...partes].join(' · '),
       }
       if (formato === 'xlsx') {
         const { exportarMinhasDemandasXLSX } = await import('../utils/relatorioMinhasDemandas')

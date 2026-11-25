@@ -35,8 +35,6 @@ function dataBR(valor?: string | null): string {
 }
 
 function situacaoPrazo(t: Ticket): string {
-  if (t.status === 'entregue') return 'Entregue'
-  if (t.status === 'cancelada') return 'Cancelada'
   if (!t.data_entrega) return 'Sem prazo'
   const hoje = new Date().toISOString().slice(0, 10)
   if (t.data_entrega < hoje) return 'Atrasada'
@@ -67,12 +65,9 @@ function linha(t: Ticket, userId: string): string[] {
 }
 
 function resumo(tickets: Ticket[]) {
-  const entregues = tickets.filter((t) => t.status === 'entregue').length
   const atrasadas = tickets.filter((t) => situacaoPrazo(t) === 'Atrasada').length
-  const emAndamento = tickets.filter(
-    (t) => t.status !== 'entregue' && t.status !== 'cancelada',
-  ).length
-  return { total: tickets.length, emAndamento, entregues, atrasadas }
+  const venceHoje = tickets.filter((t) => situacaoPrazo(t) === 'Vence hoje').length
+  return { total: tickets.length, atrasadas, venceHoje }
 }
 
 function nomeArquivo(extensao: string): string {
@@ -130,8 +125,7 @@ export async function exportarMinhasDemandasXLSX(
   ws.mergeCells(`A4:${ultima}4`)
   const res = ws.getCell('A4')
   res.value =
-    `Total: ${r.total}   ·   Em andamento: ${r.emAndamento}   ·   ` +
-    `Entregues: ${r.entregues}   ·   Atrasadas: ${r.atrasadas}`
+    `Em andamento: ${r.total}   ·   Atrasadas: ${r.atrasadas}   ·   Vencem hoje: ${r.venceHoje}`
   res.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF063A70' } }
   res.alignment = { horizontal: 'center', vertical: 'middle' }
   ws.getRow(4).height = 22
@@ -167,7 +161,7 @@ export async function exportarMinhasDemandasXLSX(
   if (tickets.length === 0) {
     ws.mergeCells(`A7:${ultima}7`)
     const vazio = ws.getCell('A7')
-    vazio.value = 'Nenhuma demanda encontrada para os filtros selecionados.'
+    vazio.value = 'Nenhuma demanda em andamento para os filtros selecionados.'
     vazio.font = { name: 'Arial', size: 10, italic: true, color: { argb: 'FF64748B' } }
     vazio.alignment = { horizontal: 'center', vertical: 'middle' }
   }
@@ -220,7 +214,7 @@ export function exportarMinhasDemandasPDF(
     <h1>Relatório de demandas</h1>
     <p class="meta">${escapeHtml(info.usuarioNome)} · gerado em ${new Date().toLocaleDateString('pt-BR')}</p>
     <p class="meta">Filtros: ${escapeHtml(info.filtros)}</p>
-    <p class="resumo">Total: ${r.total} · Em andamento: ${r.emAndamento} · Entregues: ${r.entregues} · Atrasadas: ${r.atrasadas}</p>
+    <p class="resumo">Em andamento: ${r.total} · Atrasadas: ${r.atrasadas} · Vencem hoje: ${r.venceHoje}</p>
     <table><thead><tr>${cab}</tr></thead><tbody>${corpo}</tbody></table>
     </body></html>`)
   win.document.close()
