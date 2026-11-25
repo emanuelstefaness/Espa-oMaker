@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { LayoutShell } from '../components/LayoutShell'
-import { TicketStatusPill } from '../components/TicketStatusPill'
+import { TicketStatusPill, STATUS_LABELS } from '../components/TicketStatusPill'
 import { UserAvatar } from '../components/UserAvatar'
 import type {
   Ticket,
@@ -57,6 +57,7 @@ export function TicketListPage() {
   const isMinhasDemandas = location.pathname === '/demandas/minhas'
   const [myTasks, setMyTasks] = useState<TicketTaskWithDemanda[]>([])
   const [activeByTicket, setActiveByTicket] = useState<Map<string, string>>(new Map())
+  const [exporting, setExporting] = useState(false)
 
   useEffect(() => {
     const params = new URLSearchParams(location.search)
@@ -187,6 +188,38 @@ export function TicketListPage() {
     setTimeout(() => load(0), 0)
   }
 
+  const emitirRelatorio = async (formato: 'xlsx' | 'pdf') => {
+    if (!appUser?.id || exporting) return
+    try {
+      setExporting(true)
+      setError(null)
+      const { tickets: todas } = await listTickets(
+        { ...filters, responsavelOuColaboradorId: appUser.id },
+        { limit: 5000, orderBy: 'data_entrega', orderDirection: 'asc' },
+      )
+      const lista = status === 'cancelada' ? todas : todas.filter((t) => t.status !== 'cancelada')
+      const partes: string[] = []
+      if (search) partes.push(`Busca "${search}"`)
+      if (status) partes.push(`Status: ${status === 'atrasadas' ? 'Atrasadas' : STATUS_LABELS[status]}`)
+      if (tipo) partes.push(`Tipo: ${tipo === 'interna' ? 'Interna' : 'Externa'}`)
+      const info = {
+        usuarioNome: appUser.name,
+        filtros: partes.length ? partes.join(' · ') : 'nenhum (todas as minhas demandas)',
+      }
+      if (formato === 'xlsx') {
+        const { exportarMinhasDemandasXLSX } = await import('../utils/relatorioMinhasDemandas')
+        await exportarMinhasDemandasXLSX(lista, appUser.id, info)
+      } else {
+        const { exportarMinhasDemandasPDF } = await import('../utils/relatorioMinhasDemandas')
+        exportarMinhasDemandasPDF(lista, appUser.id, info)
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao emitir relatório.')
+    } finally {
+      setExporting(false)
+    }
+  }
+
   const minhas = tickets.filter(
     (t) =>
       t.responsavel_id === appUser?.id || t.colaborador_id === appUser?.id,
@@ -305,9 +338,27 @@ export function TicketListPage() {
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {isMinhasDemandas && (
-              <Link to="/demandas" className="btn btn-outline">
-                Ver todas as demandas
-              </Link>
+              <>
+                <button
+                  type="button"
+                  onClick={() => emitirRelatorio('xlsx')}
+                  disabled={exporting || !appUser?.id}
+                  className="btn btn-outline"
+                >
+                  {exporting ? 'Gerando...' : 'Relatório Excel'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => emitirRelatorio('pdf')}
+                  disabled={exporting || !appUser?.id}
+                  className="btn btn-outline"
+                >
+                  Relatório PDF
+                </button>
+                <Link to="/demandas" className="btn btn-outline">
+                  Ver todas as demandas
+                </Link>
+              </>
             )}
             <Link to="/demandas/nova" className="btn btn-lime">
               + Nova demanda
